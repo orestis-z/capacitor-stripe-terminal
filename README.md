@@ -23,6 +23,15 @@
 
 _These instructions are for v2 which is currently in beta. See the [`v1-support`](https://github.com/eventOneHQ/capacitor-stripe-terminal/tree/v1-support) branch for v1 instructions._
 
+## Requirements
+
+- **Capacitor**: 8.x
+- **Stripe Terminal SDK**:
+  - iOS: 5.2.0 (requires iOS 15.0+)
+  - Android: 5.2.0 (requires Android API 23+)
+- **TypeScript**: 4.7+
+- **Node.js**: 14.x or higher
+
 ## Maintainers
 
 | Maintainer | GitHub                              | Social                                      |

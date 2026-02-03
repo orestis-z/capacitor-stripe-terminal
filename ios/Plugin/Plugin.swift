@@ -96,11 +96,17 @@ public class StripeTerminal: CAPPlugin, ConnectionTokenProvider, DiscoveryDelega
 
         let discoveryMethod = StripeTerminalUtils.translateDiscoveryMethod(method: method)
 
-        let config = DiscoveryConfiguration(
+        // In Stripe Terminal SDK v5, DiscoveryConfiguration must use builder pattern
+        var configBuilder = DiscoveryConfiguration.Builder(
             discoveryMethod: discoveryMethod,
-            locationId: locationId,
             simulated: simulated
         )
+        
+        if let locationId = locationId {
+            configBuilder = configBuilder.locationId(locationId)
+        }
+        
+        let config = try! configBuilder.build()
         
         guard pendingDiscoverReaders == nil else {
             call.reject("discoverReaders is busy")
