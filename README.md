@@ -32,6 +32,8 @@ _These instructions are for v2 which is currently in beta. See the [`v1-support`
 - **TypeScript**: 4.7+
 - **Node.js**: 14.x or higher
 
+> **📝 Upgrading from an earlier version?** See the [Migration Guide](MIGRATION_V5.md) for details on breaking changes and upgrade instructions.
+
 ## Maintainers
 
 | Maintainer | GitHub                              | Social                                      |
