@@ -82,6 +82,9 @@ export class StripeTerminalPlugin {
 
   private get sdk(): StripeTerminalInterface {
     if (this.activeSdkType === 'js' && this.stripeTerminalWeb !== undefined) {
+      // Type assertion is safe here: WebPlugin in Capacitor v8 properly implements the addListener
+      // return type (Promise<PluginListenerHandle> & PluginListenerHandle), but TypeScript can't
+      // verify this statically. The runtime behavior is correct.
       return this.stripeTerminalWeb as unknown as StripeTerminalInterface
     } else {
       return StripeTerminal

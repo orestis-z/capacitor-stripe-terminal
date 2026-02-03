@@ -106,7 +106,13 @@ public class StripeTerminal: CAPPlugin, ConnectionTokenProvider, DiscoveryDelega
             configBuilder = configBuilder.locationId(locationId)
         }
         
-        let config = try! configBuilder.build()
+        let config: DiscoveryConfiguration
+        do {
+            config = try configBuilder.build()
+        } catch {
+            call.reject("Failed to build discovery configuration: \(error.localizedDescription)", nil, error)
+            return
+        }
         
         guard pendingDiscoverReaders == nil else {
             call.reject("discoverReaders is busy")
