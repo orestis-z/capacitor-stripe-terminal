@@ -21,7 +21,12 @@ export enum ConnectionStatus {
   /**
    * The SDK is currently connecting to a reader.
    */
-  Connecting = 2
+  Connecting = 2,
+  /**
+   * The SDK is currently reconnecting to a reader (auto-reconnect in progress).
+   * Added in Stripe Terminal SDK v5.
+   */
+  Reconnecting = 3
 }
 
 /**

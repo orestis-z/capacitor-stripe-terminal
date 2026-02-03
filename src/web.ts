@@ -1,7 +1,6 @@
 import { Subject } from 'rxjs'
 import { WebPlugin } from '@capacitor/core'
 import {
-  StripeTerminalInterface,
   DiscoveryConfiguration,
   Reader,
   ConnectionStatus,
@@ -144,10 +143,7 @@ const paymentStatus: { [status: string]: PaymentStatus } = {
 /**
  * @ignore
  */
-export class StripeTerminalWeb
-  extends WebPlugin
-  implements StripeTerminalInterface
-{
+export class StripeTerminalWeb extends WebPlugin {
   private STRIPE_API_BASE = 'https://api.stripe.com'
   private instance: Terminal | null = null
 

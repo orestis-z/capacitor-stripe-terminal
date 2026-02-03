@@ -44,7 +44,9 @@ public class StripeTerminal: CAPPlugin, ConnectionTokenProvider, DiscoveryDelega
     @objc func initialize(_ call: CAPPluginCall) {
         DispatchQueue.main.async {
             if !self.isInitialized {
-                Terminal.setTokenProvider(self)
+                // In Stripe Terminal SDK v5, Terminal.setTokenProvider is replaced with Terminal.initWithTokenProvider
+                // This must be called before accessing Terminal.shared
+                Terminal.initWithTokenProvider(self)
                 Terminal.shared.delegate = self
 
                 Terminal.setLogListener { logline in
@@ -394,8 +396,13 @@ public class StripeTerminal: CAPPlugin, ConnectionTokenProvider, DiscoveryDelega
 
     @objc func clearCachedCredentials(_ call: CAPPluginCall) {
         thread.async {
-            Terminal.shared.clearCachedCredentials()
-            call.resolve()
+            // In Stripe Terminal SDK v5, clearCachedCredentials returns a Result/BOOL with error
+            do {
+                try Terminal.shared.clearCachedCredentials()
+                call.resolve()
+            } catch {
+                call.reject("Failed to clear cached credentials", nil, error)
+            }
         }
     }
 

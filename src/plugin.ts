@@ -82,7 +82,7 @@ export class StripeTerminalPlugin {
 
   private get sdk(): StripeTerminalInterface {
     if (this.activeSdkType === 'js' && this.stripeTerminalWeb !== undefined) {
-      return this.stripeTerminalWeb
+      return this.stripeTerminalWeb as unknown as StripeTerminalInterface
     } else {
       return StripeTerminal
     }
