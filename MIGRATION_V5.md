@@ -101,7 +101,7 @@ npx cap sync
    - Open your project in Xcode
    - Select your project in the navigator
    - Select your app target
-   - Under "Deployment Info", set "Minimum Deployments" to iOS 15.0
+   - Under "Deployment Info", set "Minimum Deployment" to iOS 15.0
 
 4. Clean and rebuild your project:
 
