@@ -221,12 +221,13 @@ public class TerminalUtils {
 
   public static DiscoveryConfiguration translateDiscoveryMethod(
     Integer method,
-    boolean simulated
+    boolean simulated,
+    String locationId
   ) {
     if (method == 2) {
       return new DiscoveryConfiguration.InternetDiscoveryConfiguration(
         0,
-        null,
+        locationId,
         simulated,
         null
       );

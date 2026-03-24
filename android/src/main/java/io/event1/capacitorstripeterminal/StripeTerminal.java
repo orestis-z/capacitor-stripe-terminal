@@ -226,9 +226,11 @@ public class StripeTerminal
   public void discoverReaders(final PluginCall call) {
     try {
       Boolean simulated = call.getBoolean("simulated", true);
+      String locationId = call.getString("locationId", null);
       DiscoveryConfiguration discoveryConfiguration = TerminalUtils.translateDiscoveryMethod(
         call.getInt("discoveryMethod", 0),
-        simulated
+        simulated,
+        locationId
       );
       Callback statusCallback = new Callback() {
         @Override
