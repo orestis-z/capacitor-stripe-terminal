@@ -828,13 +828,15 @@ export class StripeTerminalPlugin {
 
       return this.normalizePaymentIntent(pi)
     } catch (err: any) {
-      if (!err?.message || !err?.data) {
+      if (!err?.message) {
         throw err
       }
 
       const stripeError = new StripeTerminalError(err.message)
-      stripeError.decline_code = err.data.decline_code
-      stripeError.payment_intent = err.data.payment_intent
+      if (err.data) {
+        stripeError.decline_code = err.data.decline_code
+        stripeError.payment_intent = err.data.payment_intent
+      }
 
       throw stripeError
     }

@@ -15,6 +15,7 @@ import com.getcapacitor.annotation.Permission;
 import com.getcapacitor.annotation.PermissionCallback;
 import com.stripe.stripeterminal.Terminal;
 import com.stripe.stripeterminal.external.callable.AppsOnDevicesListener;
+import com.stripe.stripeterminal.external.api.ApiError;
 import com.stripe.stripeterminal.external.callable.Callback;
 import com.stripe.stripeterminal.external.callable.Cancelable;
 import com.stripe.stripeterminal.external.callable.ConnectionTokenCallback;
@@ -660,7 +661,25 @@ public class StripeTerminal
 
             @Override
             public void onFailure(@NonNull TerminalException e) {
-              call.reject(e.getErrorMessage(), e.getErrorCode().toString(), e);
+              JSObject data = new JSObject();
+
+              PaymentIntent failedIntent = e.getPaymentIntent();
+              if (failedIntent != null) {
+                data.put(
+                  "payment_intent",
+                  TerminalUtils.serializePaymentIntent(failedIntent, lastCurrency)
+                );
+              }
+
+              ApiError apiError = e.getApiError();
+              if (apiError != null) {
+                String declineCode = apiError.getDeclineCode();
+                if (declineCode != null) {
+                  data.put("decline_code", declineCode);
+                }
+              }
+
+              call.reject(e.getErrorMessage(), e.getErrorCode().toString(), e, data);
             }
           }
         );

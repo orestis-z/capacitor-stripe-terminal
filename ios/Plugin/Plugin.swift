@@ -417,7 +417,16 @@ public class StripeTerminal: CAPPlugin, ConnectionTokenProvider, DiscoveryDelega
             if let intent = self.currentPaymentIntent {
                 Terminal.shared.confirmPaymentIntent(intent) { paymentIntent, error in
                     if let error = error {
-                        call.reject(error.localizedDescription, nil, error)
+                        var data: PluginCallResultData = [:]
+                        if let confirmError = error as? ConfirmPaymentIntentError {
+                            if let failedIntent = confirmError.paymentIntent {
+                                data["payment_intent"] = StripeTerminalUtils.serializePaymentIntent(intent: failedIntent)
+                            }
+                            if let declineCode = confirmError.declineCode {
+                                data["decline_code"] = declineCode
+                            }
+                        }
+                        call.reject(error.localizedDescription, nil, error, data.isEmpty ? nil : data)
                     } else if let paymentIntent = paymentIntent {
                         self.currentPaymentIntent = paymentIntent
                         call.resolve(["intent": StripeTerminalUtils.serializePaymentIntent(intent: paymentIntent)])
