@@ -6,8 +6,8 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/maintenance/yes/2021?style=flat-square" />
-  <a href="https://github.com/eventonehq/capacitor-stripe-terminal/actions?query=workflow%3A%22Release%22"><img src="https://img.shields.io/github/workflow/status/eventonehq/capacitor-stripe-terminal/Release?style=flat-square" /></a>
+  <img src="https://img.shields.io/maintenance/yes/2026?style=flat-square" />
+  <a href="https://github.com/eventOneHQ/capacitor-stripe-terminal/actions/workflows/release.yml"><img src="https://img.shields.io/github/actions/workflow/status/eventOneHQ/capacitor-stripe-terminal/release.yml?style=flat-square" /></a>
   <a href="https://www.npmjs.com/package/capacitor-stripe-terminal"><img src="https://img.shields.io/npm/l/capacitor-stripe-terminal?style=flat-square" /></a>
 <br>
   <a href="https://www.npmjs.com/package/capacitor-stripe-terminal"><img src="https://img.shields.io/npm/dw/capacitor-stripe-terminal?style=flat-square" /></a>
@@ -17,20 +17,12 @@
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 </p>
 
-**[Current project status](https://github.com/eventOneHQ/capacitor-stripe-terminal/discussions/42)**
-
-**_WARNING_**
-
-_These instructions are for v2 which is currently in beta. See the [`v1-support`](https://github.com/eventOneHQ/capacitor-stripe-terminal/tree/v1-support) branch for v1 instructions._
-
 ## Requirements
 
 - **Capacitor**: 8.x
 - **Stripe Terminal SDK**:
-  - iOS: 5.2.0 (requires iOS 15.0+)
-  - Android: 5.2.0 (requires Android API 23+)
-- **TypeScript**: 4.7+
-- **Node.js**: 14.x or higher
+  - iOS: 5.3.0 (requires iOS 15.0+)
+  - Android: 5.3.0 (requires Android API 23+)
 
 > **📝 Upgrading from an earlier version?** See the [Migration Guide](MIGRATION_V5.md) for details on breaking changes and upgrade instructions.
 
@@ -134,7 +126,7 @@ const terminal = await StripeTerminalPlugin.create({
 const discoverHandle = await terminal.discoverReaders(
   {
     simulated: false,
-    discoveryMethod: DiscoveryMethod.BluetoothProximity,
+    discoveryMethod: DiscoveryMethod.BluetoothScan,
   },
   (readers) => {
     if (readers.length) {
@@ -186,13 +178,7 @@ See the full API docs [here](https://oss.eventone.page/capacitor-stripe-terminal
 
 <p>
     <a href="https://event1.io/?utm_medium=opensource&utm_source=capacitor-stripe-terminal">
-        <img src="https://brand.event1.io/wordmark/wm.svg" width="200px">
-    </a>
-</p>
-
-<p>
-    <a href="https://tableneeds.com/?utm_medium=opensource&utm_source=capacitor-stripe-terminal">
-        <img src="https://tableneeds.com/wp-content/uploads/2021/08/tn-new.svg" width="200px">
+        <img src="https://brand.event1.io/wordmark/wm-white.svg" width="200px">
     </a>
 </p>
 
