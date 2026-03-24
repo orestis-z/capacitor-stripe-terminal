@@ -141,6 +141,9 @@ const discoverHandle = await terminal.discoverReaders(
         })
     }
   },
+  (error) => {
+    console.error('discoverReaders error', error)
+  },
 )
 
 // Once the reader is connected, collect a payment intent!

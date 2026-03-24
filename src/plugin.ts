@@ -420,6 +420,7 @@ export class StripeTerminalPlugin {
   public async discoverReaders(
     options: DiscoveryConfiguration,
     callback: (readers: Reader[]) => void,
+    errorCallback?: (error: Error) => void,
   ): Promise<PluginListenerHandle> {
     this.ensureInitialized()
 
@@ -464,8 +465,9 @@ export class StripeTerminalPlugin {
       .then(() => {
         this.isDiscovering = false
       })
-      .catch(() => {
+      .catch((err: Error) => {
         this.isDiscovering = false
+        errorCallback?.(err)
       })
 
     // if using the both method, search with the js sdk as well
@@ -491,7 +493,9 @@ export class StripeTerminalPlugin {
       }
 
       // TODO: figure out what to do with errors and completion on this method. maybe just ignore them?
-      this.stripeTerminalWeb.discoverReaders(jsOptions)
+      this.stripeTerminalWeb.discoverReaders(jsOptions).catch((err: Error) => {
+        errorCallback?.(err)
+      })
     }
 
     return {
