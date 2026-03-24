@@ -25,10 +25,8 @@ This update includes:
 - **Target SDK**: API 35 (Android 15)
 - **Gradle**: 8.3.2+
 
-### Node.js & TypeScript
+### Capacitor
 
-- **Node.js**: 14.x or higher
-- **TypeScript**: 4.7+
 - **Capacitor**: 8.x
 
 ## Breaking Changes
@@ -99,11 +97,20 @@ connectAppsOnDevicesReader(reader)
 
 **Action Required**: Replace any usage of `DiscoveryMethod.Embedded` or `DiscoveryMethod.Handoff` with `DiscoveryMethod.AppsOnDevices`. Replace `connectHandoffReader` calls with `connectAppsOnDevicesReader`.
 
-### 4. `VerifoneP400` Device Type Removed (Android)
+### 4. `VerifoneP400` Device Type Removed
 
-The `DeviceType.VerifoneP400` enum value has been removed from the Android Stripe Terminal SDK v5. On Android, Verifone P400 readers will now be reported as `DeviceType.Unknown`.
+The `DeviceType.VerifoneP400` enum value has been removed from this plugin. The Verifone P400 countertop reader is no longer supported by the Stripe Terminal SDK v5.
 
-**Action Required**: If your app handles `DeviceType.VerifoneP400` specifically on Android, update your code to also handle `DeviceType.Unknown` for any Verifone P400 devices.
+**Action Required**: Remove any references to `DeviceType.VerifoneP400` in your code.
+
+```typescript
+// Before
+if (reader.deviceType === DeviceType.VerifoneP400) {
+  // handle Verifone P400
+}
+
+// After — remove this code path entirely; the Verifone P400 is no longer supported
+```
 
 ### 5. `LocalMobile` Renamed to `TapToPay`
 
@@ -315,7 +322,7 @@ This upgrade primarily updates the underlying SDKs while maintaining most API co
 - Update your iOS deployment target to 15.0
 - Handle the new `Reconnecting` connection status if you monitor connection state
 - On Android: replace `DiscoveryMethod.Embedded` and `DiscoveryMethod.Handoff` with `DiscoveryMethod.AppsOnDevices`; replace `connectHandoffReader` calls with `connectAppsOnDevicesReader`
-- On Android: update any `DeviceType.VerifoneP400` handling to also handle `DeviceType.Unknown`
+- Remove any usage of `DeviceType.VerifoneP400` — the Verifone P400 reader is no longer supported
 - Rename `DiscoveryMethod.LocalMobile` → `DiscoveryMethod.TapToPay`, `LocalMobileConnectionConfiguration` → `TapToPayConnectionConfiguration`, `connectLocalMobileReader()` → `connectTapToPayReader()`, and the `localMobileReaderDidAcceptTermsOfService` event → `tapToPayReaderDidAcceptTermsOfService`
 - Rename `DeviceType.AppleBuiltIn` → `DeviceType.TapToPay` (now covers both iOS and Android Tap to Pay readers)
 - **Remove `rxjs` from your dependencies** and update all Observable-based call sites to use the new callback + `PluginListenerHandle` pattern (call `handle.remove()` instead of `subscription.unsubscribe()`)

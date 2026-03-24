@@ -66,7 +66,6 @@ interface ProcessPaymentResult {
  */
 const deviceTypes: { [type: string]: DeviceType } = {
   ['chipper_2X']: DeviceType.Chipper2X,
-  ['verifone_P400']: DeviceType.VerifoneP400,
   ['bbpos_wisepos_e']: DeviceType.WisePosE,
   ['stripe_s700']: DeviceType.StripeS700,
   ['stripe_s700_devkit']: DeviceType.StripeS700DevKit,
@@ -89,6 +88,7 @@ const connectionStatus: { [status: string]: ConnectionStatus } = {
   connecting: ConnectionStatus.Connecting,
   connected: ConnectionStatus.Connected,
   not_connected: ConnectionStatus.NotConnected,
+  reconnecting: ConnectionStatus.Reconnecting,
 }
 
 /**

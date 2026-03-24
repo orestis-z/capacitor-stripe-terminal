@@ -66,13 +66,6 @@ export enum DeviceType {
   Chipper2X,
 
   /**
-   * The Verifone P400 countertop reader.
-   *
-   * @see https://stripe.com/docs/terminal/readers/verifone-p400
-   */
-  VerifoneP400,
-
-  /**
    * The BBPOS WisePad 3 mobile reader.
    *
    * @see https://stripe.com/docs/terminal/readers/bbpos-wisepad3

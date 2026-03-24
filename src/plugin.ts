@@ -988,7 +988,6 @@ export class StripeTerminalPlugin {
       type === DeviceType.WisePosE ||
       type === DeviceType.WisePosEDevKit ||
       type === DeviceType.StripeS700 ||
-      type === DeviceType.VerifoneP400 ||
       type === DeviceType.StripeS700DevKit ||
       type === DeviceType.StripeS710 ||
       type === DeviceType.StripeS710DevKit
