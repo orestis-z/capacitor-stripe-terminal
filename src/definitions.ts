@@ -171,15 +171,11 @@ export enum DiscoveryMethod {
 
   /**
    * The USB discovery method allows the user to use the device's usb input(s) to interact with Stripe Terminal's usb-capable readers.
-   *
-   * @platform Android
    */
   USB,
 
   /**
    * The AppsOnDevices discovery method is for Android apps running directly on a Stripe reader device (e.g. Stripe Reader S700). This is the Android-only replacement for the deprecated Embedded and Handoff discovery methods.
-   *
-   * @platform Android
    */
   AppsOnDevices,
 
@@ -309,8 +305,7 @@ export interface ConnectionConfiguration {
 /**
  * @category Reader
  */
-export interface BluetoothConnectionConfiguration
-  extends ConnectionConfiguration {
+export interface BluetoothConnectionConfiguration extends ConnectionConfiguration {
   /**
    * When set to true, the Terminal SDK will attempt a Bluetooth auto-reconnection on any unexpected disconnect.
    *
@@ -328,15 +323,13 @@ export interface UsbConnectionConfiguration extends ConnectionConfiguration {}
 
 /**
  * @category Reader
- * @platform android
  */
 export interface AppsOnDevicesConnectionConfiguration {}
 
 /**
  * @category Reader
  */
-export interface TapToPayConnectionConfiguration
-  extends ConnectionConfiguration {
+export interface TapToPayConnectionConfiguration extends ConnectionConfiguration {
   /**
    * If your integration is creating destination charges and using `on_behalf_of`, you must provide the `connected_account_id` in the `onBehalfOf` parameter as part of the `TapToPayConnectionConfiguration`. Unlike other reader types which require this information on a per-transaction basis, the Apple Built-In reader requires this on a per-connection basis as well in order to establish a reader connection.
    *
@@ -362,8 +355,7 @@ export interface TapToPayConnectionConfiguration
 /**
  * @category Reader
  */
-export interface InternetConnectionConfiguration
-  extends ConnectionConfiguration {
+export interface InternetConnectionConfiguration extends ConnectionConfiguration {
   /**
    * When set to true, the connection will automatically error if the reader is already connected to a device and collecting payment. When set to false, this will allow you to connect to a reader already connected to another device, and will break the existing reader-to-SDK connection on the other device when it attempts to collect payment.
    *

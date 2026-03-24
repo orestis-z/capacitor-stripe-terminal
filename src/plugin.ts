@@ -188,49 +188,53 @@ export class StripeTerminalPlugin {
         options.includes('Tap') &&
         options.includes('Insert')
       ) {
-        return 7
+        return (
+          ReaderInputOptions.SwipeCard |
+          ReaderInputOptions.TapCard |
+          ReaderInputOptions.InsertCard
+        )
       } else if (
         !options.includes('Swipe') &&
         options.includes('Tap') &&
         options.includes('Insert')
       ) {
-        return 6
+        return ReaderInputOptions.TapCard | ReaderInputOptions.InsertCard
       } else if (
         options.includes('Swipe') &&
         options.includes('Tap') &&
         !options.includes('Insert')
       ) {
-        return 5
+        return ReaderInputOptions.SwipeCard | ReaderInputOptions.TapCard
       } else if (
         !options.includes('Swipe') &&
         options.includes('Tap') &&
         !options.includes('Insert')
       ) {
-        return 4
+        return ReaderInputOptions.TapCard
       } else if (
         options.includes('Swipe') &&
         !options.includes('Tap') &&
         options.includes('Insert')
       ) {
-        return 3
+        return ReaderInputOptions.SwipeCard | ReaderInputOptions.InsertCard
       } else if (
         !options.includes('Swipe') &&
         !options.includes('Tap') &&
         options.includes('Insert')
       ) {
-        return 2
+        return ReaderInputOptions.InsertCard
       } else if (
         options.includes('Swipe') &&
         !options.includes('Tap') &&
         !options.includes('Insert')
       ) {
-        return 1
+        return ReaderInputOptions.SwipeCard
       } else {
-        return 0
+        return ReaderInputOptions.None
       }
     }
 
-    return parseFloat(data.value)
+    return parseFloat(data.value) as ReaderInputOptions
   }
 
   private _listenerToObservable(
