@@ -17,6 +17,8 @@ import {
   PermissionStatus,
   Cart,
   CollectConfig,
+  ChargeStatus,
+  Charge,
 } from './definitions'
 import {
   loadStripeTerminal,
@@ -118,6 +120,47 @@ const testPaymentMethodMap: { [method: string]: SimulatedCardType } = {
   charge_declined_processing_error:
     SimulatedCardType.ChargeDeclinedProcessingError,
   refund_fail: SimulatedCardType.RefundFailed,
+}
+
+/**
+ * @ignore
+ */
+const chargeStatus: { [status: string]: ChargeStatus } = {
+  succeeded: ChargeStatus.Succeeded,
+  pending: ChargeStatus.Pending,
+  failed: ChargeStatus.Failed,
+}
+
+/**
+ * @ignore
+ */
+function serializeCharge(c: Stripe.Charge): Charge {
+  return {
+    stripeId: c.id,
+    amount: c.amount,
+    currency: c.currency,
+    status: chargeStatus[c.status] ?? ChargeStatus.Failed,
+    metadata: c.metadata ?? {},
+    stripeDescription: c.description ?? null,
+    statementDescriptorSuffix: c.statement_descriptor_suffix ?? null,
+    calculatedStatementDescriptor: c.calculated_statement_descriptor ?? null,
+    authorizationCode: (c as any).authorization_code ?? null,
+    amountRefunded: c.amount_refunded,
+    created: c.created,
+    captured: c.captured,
+    paid: c.paid,
+    refunded: c.refunded,
+    customer:
+      typeof c.customer === 'string' ? c.customer : (c.customer?.id ?? null),
+    paymentIntentId:
+      typeof c.payment_intent === 'string'
+        ? c.payment_intent
+        : (c.payment_intent?.id ?? null),
+    receiptEmail: c.receipt_email ?? null,
+    receiptNumber: c.receipt_number ?? null,
+    receiptUrl: c.receipt_url ?? null,
+    livemode: c.livemode,
+  }
 }
 
 /**
@@ -464,7 +507,7 @@ export class StripeTerminalWeb extends WebPlugin {
             ? null
             : paymentIntent.payment_method,
         amountDetails: paymentIntent.amount_details,
-        charges: paymentIntent.charges?.data ?? [],
+        charges: (paymentIntent.charges?.data ?? []).map(serializeCharge),
         metadata: paymentIntent.metadata,
       },
     }
@@ -506,7 +549,9 @@ export class StripeTerminalWeb extends WebPlugin {
           paymentMethod: this.currentPaymentIntent
             .payment_method as Stripe.PaymentMethod,
           amountDetails: this.currentPaymentIntent.amount_details,
-          charges: this.currentPaymentIntent.charges?.data ?? [],
+          charges: (this.currentPaymentIntent.charges?.data ?? []).map(
+            serializeCharge,
+          ),
           metadata: this.currentPaymentIntent.metadata,
         },
       }
@@ -546,7 +591,7 @@ export class StripeTerminalWeb extends WebPlugin {
           paymentMethod: res.paymentIntent
             .payment_method as Stripe.PaymentMethod,
           amountDetails: res.paymentIntent.amount_details,
-          charges: res.paymentIntent.charges?.data ?? [],
+          charges: (res.paymentIntent.charges?.data ?? []).map(serializeCharge),
           metadata: res.paymentIntent.metadata,
         },
       }

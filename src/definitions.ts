@@ -546,6 +546,58 @@ export enum ReaderInputOptions {
 }
 
 /**
+ * The possible statuses for a Charge.
+ *
+ * @category Payment
+ * @see https://stripe.com/docs/api/charges/object#charge_object-status
+ */
+export enum ChargeStatus {
+  /**
+   * The charge succeeded.
+   */
+  Succeeded,
+
+  /**
+   * The charge is pending.
+   */
+  Pending,
+
+  /**
+   * The charge failed.
+   */
+  Failed,
+}
+
+/**
+ * A Stripe Charge object.
+ *
+ * @category Payment
+ * @see https://stripe.com/docs/api/charges/object
+ */
+export interface Charge {
+  stripeId: string
+  amount: number
+  currency: string
+  status: ChargeStatus
+  metadata: { [key: string]: string }
+  stripeDescription: string | null
+  statementDescriptorSuffix: string | null
+  calculatedStatementDescriptor: string | null
+  authorizationCode: string | null
+  amountRefunded: number
+  created: number | null
+  captured: boolean
+  paid: boolean
+  refunded: boolean
+  customer: string | null
+  paymentIntentId: string | null
+  receiptEmail: string | null
+  receiptNumber: string | null
+  receiptUrl: string | null
+  livemode: boolean
+}
+
+/**
  * The possible statuses for a PaymentIntent.
  *
  * @category Payment
@@ -626,7 +678,7 @@ export interface PaymentIntent {
   /**
    * Charges that were created by this `PaymentIntent`, if any.
    */
-  charges: Stripe.Charge[]
+  charges: Charge[]
 
   /**
    * The payment method to be used in this `PaymentIntent`. Only valid in the intent returned during `collectPaymentMethod` when using the `updatePaymentIntent` option in the `CollectConfig`.

@@ -299,6 +299,80 @@ try {
 
 **Note on error guard change**: The internal `StripeTerminalError` construction was also made more robust. Previously, if the native side returned an error without a data payload, the raw error was re-thrown unmodified (not as a `StripeTerminalError`). Now, any error with a message is always wrapped in `StripeTerminalError`, with `decline_code` and `payment_intent` populated only when the native side provides them.
 
+### 11. `Charge.status` Is Now a `ChargeStatus` Enum (was a string on Android / integer on iOS)
+
+Previously, the `status` field of each `Charge` object in `PaymentIntent.charges` was inconsistent between platforms:
+
+- **iOS** returned a raw integer (the `SCPChargeStatus` enum `rawValue`, e.g. `0`)
+- **Android** returned a raw string (e.g. `"succeeded"`)
+- **Web** passed through the Stripe SDK string directly (e.g. `"succeeded"`)
+
+All three platforms now return the same `ChargeStatus` enum integer.
+
+```typescript
+export enum ChargeStatus {
+  Succeeded = 0,
+  Pending = 1,
+  Failed = 2,
+}
+```
+
+**Action Required**: Update any code that reads `charge.status`.
+
+```typescript
+// Before — unreliable, platform-dependent
+if (charge.status === 'succeeded') { ... }   // only worked on Android/Web
+if (charge.status === 0) { ... }             // only worked on iOS
+
+// After — consistent across all platforms
+import { ChargeStatus } from 'capacitor-stripe-terminal'
+
+if (charge.status === ChargeStatus.Succeeded) { ... }
+```
+
+### 12. `PaymentIntent.charges` Now Uses Plugin-Local `Charge` Interface (was `Stripe.Charge`)
+
+The type of `PaymentIntent.charges` has changed from `Stripe.Charge[]` (the Stripe Node.js SDK type) to `Charge[]`, a new interface defined in this plugin. This ensures the returned shape is consistent across iOS, Android, and Web and avoids pulling in a server-side SDK type for a client-side value.
+
+The `Charge` interface includes all fields that were already being serialized by the native platforms:
+
+```typescript
+export interface Charge {
+  stripeId: string
+  amount: number
+  currency: string
+  status: ChargeStatus // enum — see breaking change #11
+  metadata: { [key: string]: string }
+  stripeDescription: string | null
+  statementDescriptorSuffix: string | null
+  calculatedStatementDescriptor: string | null
+  authorizationCode: string | null
+  amountRefunded: number
+  created: number | null // Unix timestamp (seconds)
+  captured: boolean
+  paid: boolean
+  refunded: boolean
+  customer: string | null
+  paymentIntentId: string | null
+  receiptEmail: string | null
+  receiptNumber: string | null
+  receiptUrl: string | null
+  livemode: boolean
+}
+```
+
+**Action Required**: If your code imports `Stripe.Charge` from the `stripe` package to type charge objects returned by this plugin, switch to importing `Charge` from `capacitor-stripe-terminal` instead.
+
+```typescript
+// Before
+import { Stripe } from 'stripe'
+const charge: Stripe.Charge = paymentIntent.charges[0]
+
+// After
+import { Charge } from 'capacitor-stripe-terminal'
+const charge: Charge = paymentIntent.charges[0]
+```
+
 ## Breaking Changes Summary
 
 The public API of `capacitor-stripe-terminal` has several breaking changes in this release. See each section above for full details.

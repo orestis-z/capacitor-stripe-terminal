@@ -1,5 +1,4 @@
 import { Capacitor, PluginListenerHandle } from '@capacitor/core'
-import { transform, isObject, isArray, snakeCase } from 'lodash'
 import { Stripe } from 'stripe'
 
 import {
@@ -180,57 +179,17 @@ export class StripeTerminalPlugin {
     isAndroid?: boolean
   }): ReaderInputOptions {
     if (data.isAndroid) {
-      const options = data.value.split('/').map((o: string) => o.trim())
-
-      if (
-        options.includes('Swipe') &&
-        options.includes('Tap') &&
-        options.includes('Insert')
-      ) {
-        return (
-          ReaderInputOptions.SwipeCard |
-          ReaderInputOptions.TapCard |
-          ReaderInputOptions.InsertCard
-        )
-      } else if (
-        !options.includes('Swipe') &&
-        options.includes('Tap') &&
-        options.includes('Insert')
-      ) {
-        return ReaderInputOptions.TapCard | ReaderInputOptions.InsertCard
-      } else if (
-        options.includes('Swipe') &&
-        options.includes('Tap') &&
-        !options.includes('Insert')
-      ) {
-        return ReaderInputOptions.SwipeCard | ReaderInputOptions.TapCard
-      } else if (
-        !options.includes('Swipe') &&
-        options.includes('Tap') &&
-        !options.includes('Insert')
-      ) {
-        return ReaderInputOptions.TapCard
-      } else if (
-        options.includes('Swipe') &&
-        !options.includes('Tap') &&
-        options.includes('Insert')
-      ) {
-        return ReaderInputOptions.SwipeCard | ReaderInputOptions.InsertCard
-      } else if (
-        !options.includes('Swipe') &&
-        !options.includes('Tap') &&
-        options.includes('Insert')
-      ) {
-        return ReaderInputOptions.InsertCard
-      } else if (
-        options.includes('Swipe') &&
-        !options.includes('Tap') &&
-        !options.includes('Insert')
-      ) {
-        return ReaderInputOptions.SwipeCard
-      } else {
-        return ReaderInputOptions.None
+      const map: Record<string, ReaderInputOptions> = {
+        Swipe: ReaderInputOptions.SwipeCard,
+        Tap: ReaderInputOptions.TapCard,
+        Insert: ReaderInputOptions.InsertCard,
       }
+      return data.value
+        .split('/')
+        .reduce(
+          (acc, s) => acc | (map[s.trim()] ?? ReaderInputOptions.None),
+          ReaderInputOptions.None,
+        )
     }
 
     return parseFloat(data.value) as ReaderInputOptions
@@ -352,6 +311,23 @@ export class StripeTerminalPlugin {
     }
   }
 
+  /**
+   * Removes all event listeners and resets the plugin instance to an
+   * uninitialized state. Call this when the plugin is no longer needed (e.g.
+   * on component unmount) to prevent listener leaks.
+   */
+  public async destroy(): Promise<void> {
+    for (const listener of Object.values(this.listeners)) {
+      await listener?.remove()
+    }
+    this.listeners = {}
+    this.isInitialized = false
+    this.isDiscovering = false
+    this.isCollectingPaymentMethod = false
+    this.selectedSdkType = 'native'
+    this.simulatedCardType = null
+  }
+
   private normalizeReader(reader: Reader): Reader {
     if (reader.batteryLevel === 0) {
       // the only time that the battery level should be 0 is while scanning on Android and the level is unknown, so change it to null for consistency with iOS
@@ -365,54 +341,8 @@ export class StripeTerminalPlugin {
     return reader
   }
 
-  private snakeCaseRecursively(obj: any) {
-    return transform(obj, (acc: any, value, key: any, target) => {
-      const snakeKey = isArray(target) ? key : snakeCase(key)
-
-      // don't touch metadata objects
-      if (key === 'metadata') {
-        acc[snakeKey] = value
-      } else {
-        acc[snakeKey] = isObject(value)
-          ? this.snakeCaseRecursively(value)
-          : value
-      }
-    })
-  }
-
-  private parseJson(json: string): any {
-    const jsonObj = JSON.parse(json)
-
-    return this.snakeCaseRecursively(jsonObj)
-  }
-
   private normalizePaymentIntent(paymentIntent: any): PaymentIntent | null {
     if (!paymentIntent) return null
-
-    if (
-      paymentIntent.amountDetails &&
-      typeof paymentIntent.amountDetails === 'string'
-    ) {
-      paymentIntent.amountDetails = this.parseJson(paymentIntent.amountDetails)
-    }
-
-    if (
-      paymentIntent.paymentMethod &&
-      typeof paymentIntent.paymentMethod === 'string' &&
-      !paymentIntent.paymentMethod.startsWith('pm_') // if its just the ID, return the ID
-    ) {
-      paymentIntent.paymentMethod = this.parseJson(paymentIntent.paymentMethod)
-    }
-
-    if (paymentIntent.charges) {
-      paymentIntent.charges = paymentIntent.charges.map((charge: any) => {
-        if (typeof charge === 'string') {
-          return this.parseJson(charge)
-        }
-
-        return charge
-      })
-    }
 
     return paymentIntent
   }
@@ -433,6 +363,10 @@ export class StripeTerminalPlugin {
     if (options.discoveryMethod === DiscoveryMethod.Internet) {
       this.selectedSdkType = 'js'
     }
+
+    // Remove any existing listeners before re-subscribing to avoid duplicates
+    await this.listeners['readersDiscoveredNative']?.remove()
+    await this.listeners['readersDiscoveredJs']?.remove()
 
     this.listeners['readersDiscoveredNative'] = await this.sdk.addListener(
       'readersDiscovered',
@@ -653,26 +587,14 @@ export class StripeTerminalPlugin {
 
     let hasSentEvent = false
 
-    // get current value
-    this.getConnectionStatus()
-      .then((data) => {
-        // only send the initial value if the event listener hasn't already
-        if (!hasSentEvent) {
-          callback(data)
-        }
-      })
-      .catch(() => {
-        // ignore errors getting initial status
-      })
-
     let listenerNative: PluginListenerHandle
     let listenerJs: PluginListenerHandle
 
-    // then listen for changes
+    // Set up listeners before fetching the initial value to avoid missing
+    // events that fire between the fetch starting and the listener attaching
     listenerNative = await StripeTerminal.addListener(
       'didChangeConnectionStatus',
       (data: any) => {
-        // only send an event if we are currently on this sdk type
         if (this.activeSdkType === 'native') {
           hasSentEvent = true
           callback(data?.status)
@@ -680,12 +602,10 @@ export class StripeTerminalPlugin {
       },
     )
 
-    // then listen for js changes
     if (this.stripeTerminalWeb) {
       listenerJs = await this.stripeTerminalWeb.addListener(
         'didChangeConnectionStatus',
         (data: any) => {
-          // only send an event if we are currently on this sdk type
           if (this.activeSdkType === 'js') {
             hasSentEvent = true
             callback(data?.status)
@@ -693,6 +613,15 @@ export class StripeTerminalPlugin {
         },
       )
     }
+
+    // Fetch initial value after listeners are attached
+    this.getConnectionStatus()
+      .then((data) => {
+        if (!hasSentEvent) {
+          callback(data)
+        }
+      })
+      .catch(() => {})
 
     return {
       remove: async () => {

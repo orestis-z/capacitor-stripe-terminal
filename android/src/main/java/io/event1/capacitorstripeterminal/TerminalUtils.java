@@ -2,9 +2,9 @@ package io.event1.capacitorstripeterminal;
 
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
-import com.google.gson.Gson;
 import com.stripe.stripeterminal.external.models.Address;
 import com.stripe.stripeterminal.external.models.AmountDetails;
+import com.stripe.stripeterminal.external.models.BatteryStatus;
 import com.stripe.stripeterminal.external.models.Charge;
 import com.stripe.stripeterminal.external.models.ConnectionStatus;
 import com.stripe.stripeterminal.external.models.DeviceType;
@@ -19,6 +19,7 @@ import com.stripe.stripeterminal.external.models.ReaderDisplayMessage;
 import com.stripe.stripeterminal.external.models.ReaderInputOptions;
 import com.stripe.stripeterminal.external.models.ReaderSoftwareUpdate;
 import com.stripe.stripeterminal.external.models.SimulatorConfiguration;
+import com.stripe.stripeterminal.external.models.Tip;
 
 public class TerminalUtils {
 
@@ -66,13 +67,24 @@ public class TerminalUtils {
 
     // battery level
     Float level = reader.getBatteryLevel();
-    double batteryLevel = 0;
-    if (level != null) batteryLevel = (double) level;
-    object.put("batteryLevel", batteryLevel);
+    if (level != null) {
+      object.put("batteryLevel", (double) level);
+    } else {
+      object.put("batteryLevel", JSObject.NULL);
+    }
+
+    // batteryStatus is not available on the Reader object in the Android SDK
+    object.put("batteryStatus", BatteryStatus.UNKNOWN.ordinal());
+
+    // isCharging
+    object.put("isCharging", reader.isCharging());
 
     //
     // INTERNET READER PROPS
     //
+
+    // ipAddress
+    object.put("ipAddress", reader.getIpAddress());
 
     // status
     int status = Reader.NetworkStatus.OFFLINE.ordinal();
@@ -113,23 +125,68 @@ public class TerminalUtils {
       paymentIntent.getStatementDescriptorSuffix()
     );
 
-    Gson gson = new Gson();
-
     PaymentMethod paymentMethod = paymentIntent.getPaymentMethod();
     AmountDetails amountDetails = paymentIntent.getAmountDetails();
 
     if (amountDetails != null) {
-      object.put("amountDetails", gson.toJson(amountDetails));
+      JSObject amountDetailsJson = new JSObject();
+      Tip tip = amountDetails.getTip();
+      if (tip != null) {
+        JSObject tipJson = new JSObject();
+        tipJson.put("amount", tip.getAmount());
+        amountDetailsJson.put("tip", tipJson);
+      }
+      object.put("amountDetails", amountDetailsJson);
     }
 
     if (paymentMethod != null) {
-      object.put("paymentMethod", gson.toJson(paymentMethod));
+      JSObject paymentMethodJson = new JSObject();
+      paymentMethodJson.put("stripeId", paymentMethod.getId());
+      paymentMethodJson.put("type", paymentMethod.getType().ordinal());
+      paymentMethodJson.put("customer", paymentMethod.getCustomer());
+      JSObject pmMetadata = new JSObject();
+      if (paymentMethod.getMetadata() != null) {
+        for (String key : paymentMethod.getMetadata().keySet()) {
+          pmMetadata.put(key, String.valueOf(paymentMethod.getMetadata().get(key)));
+        }
+      }
+      paymentMethodJson.put("metadata", pmMetadata);
+      paymentMethodJson.put("livemode", paymentMethod.getLivemode());
+      paymentMethodJson.put("created", paymentMethod.getCreated());
+      object.put("paymentMethod", paymentMethodJson);
     }
 
     JSArray charges = new JSArray();
     if (paymentIntent.getCharges() != null) {
       for (Charge charge : paymentIntent.getCharges()) {
-        charges.put(gson.toJson(charge));
+        JSObject chargeJson = new JSObject();
+        chargeJson.put("stripeId", charge.getId());
+        chargeJson.put("amount", charge.getAmount());
+        chargeJson.put("currency", charge.getCurrency());
+        chargeJson.put("status", translateChargeStatusToJS(charge.getStatus()));
+        JSObject chargeMetadata = new JSObject();
+        if (charge.getMetadata() != null) {
+          for (String key : charge.getMetadata().keySet()) {
+            chargeMetadata.put(key, String.valueOf(charge.getMetadata().get(key)));
+          }
+        }
+        chargeJson.put("metadata", chargeMetadata);
+        chargeJson.put("stripeDescription", charge.getDescription());
+        chargeJson.put("statementDescriptorSuffix", charge.getStatementDescriptorSuffix());
+        chargeJson.put("calculatedStatementDescriptor", charge.getCalculatedStatementDescriptor());
+        chargeJson.put("authorizationCode", charge.getAuthorizationCode());
+        chargeJson.put("amountRefunded", charge.getAmountRefunded());
+        chargeJson.put("created", charge.getCreated());
+        chargeJson.put("captured", charge.getCaptured());
+        chargeJson.put("paid", charge.getPaid());
+        chargeJson.put("refunded", charge.getRefunded());
+        chargeJson.put("customer", charge.getCustomer());
+        chargeJson.put("paymentIntentId", charge.getPaymentIntentId());
+        chargeJson.put("receiptEmail", charge.getReceiptEmail());
+        chargeJson.put("receiptNumber", charge.getReceiptNumber());
+        chargeJson.put("receiptUrl", charge.getReceiptUrl());
+        chargeJson.put("livemode", charge.getLivemode());
+        charges.put(chargeJson);
       }
     }
     object.put("charges", charges);
@@ -160,7 +217,7 @@ public class TerminalUtils {
     object.put("estimatedUpdateTime", durationEstimate.ordinal());
     object.put("deviceSoftwareVersion", readerSoftwareUpdate.getVersion());
     object.put("components", readerSoftwareUpdate.getComponents());
-    object.put("requiredAt", readerSoftwareUpdate.getRequiredAtMs());
+    object.put("requiredAt", readerSoftwareUpdate.getRequiredAtMs() / 1000.0);
 
     return object;
   }
@@ -217,6 +274,18 @@ public class TerminalUtils {
     //      object.put("simulatedCard", config.getSimulatedCard().getEmvBlob().toString());
 
     return object;
+  }
+
+  // translate Android charge status string to JS ChargeStatus enum ordinal
+  // matches iOS SCPChargeStatus: 0=Succeeded, 1=Pending, 2=Failed
+  public static int translateChargeStatusToJS(String status) {
+    if (status == null) return 2; // Failed as safe default
+    switch (status) {
+      case "succeeded": return 0;
+      case "pending":   return 1;
+      case "failed":    return 2;
+      default:          return 2;
+    }
   }
 
   public static DiscoveryConfiguration translateDiscoveryMethod(

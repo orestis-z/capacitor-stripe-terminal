@@ -17,13 +17,11 @@
   "license": "MIT",
   "dependencies": {
     "@capacitor/core": "^8.0.2",
-    "@stripe/terminal-js": "^0.26.0",
-    "lodash": "^4.17.21"
+    "@stripe/terminal-js": "^0.26.0"
   },
   "devDependencies": {
     "@capacitor/android": "^8.2.0",
     "@capacitor/ios": "^8.2.0",
-    "@types/lodash": "^4.17.24",
     "husky": "^9.1.7",
     "prettier": "^3.8.1",
     "prettier-plugin-java": "^2.8.1",
