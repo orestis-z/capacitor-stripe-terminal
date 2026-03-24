@@ -11,8 +11,8 @@ import {
   InternetConnectionConfiguration,
   BluetoothConnectionConfiguration,
   UsbConnectionConfiguration,
-  HandoffConnectionConfiguration,
-  LocalMobileConnectionConfiguration,
+  AppsOnDevicesConnectionConfiguration,
+  TapToPayConnectionConfiguration,
   Reader,
   ConnectionStatus,
   PaymentStatus,
@@ -559,22 +559,21 @@ export class StripeTerminalPlugin {
   }
 
   /**
-   * Attempts to connect to the given reader in handoff mode.
+   * Attempts to connect to an AppsOnDevices reader (Android only).
    *
    * @returns Reader
    */
-  public async connectHandoffReader(
+  public async connectAppsOnDevicesReader(
     reader: Reader,
-    config: HandoffConnectionConfiguration
+    _config?: AppsOnDevicesConnectionConfiguration
   ): Promise<Reader | null> {
     this.ensureInitialized()
 
-    // if connecting to a handoff reader, make sure to switch to the native SDK
+    // if connecting to an AppsOnDevices reader, make sure to switch to the native SDK
     this.selectedSdkType = 'native'
 
-    const data = await this.sdk.connectHandoffReader({
-      serialNumber: reader.serialNumber,
-      locationId: config.locationId
+    const data = await this.sdk.connectAppsOnDevicesReader({
+      serialNumber: reader.serialNumber
     })
 
     return this.objectExists(data?.reader)
@@ -585,16 +584,16 @@ export class StripeTerminalPlugin {
    *
    * @returns Reader
    */
-  public async connectLocalMobileReader(
+  public async connectTapToPayReader(
     reader: Reader,
-    config: LocalMobileConnectionConfiguration
+    config: TapToPayConnectionConfiguration
   ): Promise<Reader | null> {
     this.ensureInitialized()
 
     // if connecting to a local reader, make sure to switch to the native SDK
     this.selectedSdkType = 'native'
 
-    const data = await this.sdk.connectLocalMobileReader({
+    const data = await this.sdk.connectTapToPayReader({
       serialNumber: reader.serialNumber,
       ...config
     })
@@ -990,13 +989,16 @@ export class StripeTerminalPlugin {
       type === DeviceType.WisePad3
     ) {
       return DeviceStyle.Bluetooth
-    } else if (type === DeviceType.AppleBuiltIn) {
+    } else if (type === DeviceType.TapToPay) {
       return DeviceStyle.Local
     } else if (
       type === DeviceType.WisePosE ||
       type === DeviceType.WisePosEDevKit ||
       type === DeviceType.StripeS700 ||
-      type === DeviceType.VerifoneP400
+      type === DeviceType.VerifoneP400 ||
+      type === DeviceType.StripeS700DevKit ||
+      type === DeviceType.StripeS710 ||
+      type === DeviceType.StripeS710DevKit
     ) {
       return DeviceStyle.Internet
     }

@@ -108,9 +108,24 @@ export enum DeviceType {
   StripeS700 = 9,
 
   /**
-   * Apple Built-In reader.
+   * The Stripe S700 DevKit countertop reader.
    */
-  AppleBuiltIn = 11
+  StripeS700DevKit = 10,
+
+  /**
+   * Tap to Pay reader.
+   */
+  TapToPay = 11,
+
+  /**
+   * The Stripe S710 countertop reader.
+   */
+  StripeS710 = 12,
+
+  /**
+   * The Stripe S710 DevKit countertop reader.
+   */
+  StripeS710DevKit = 13
 }
 
 /**
@@ -156,23 +171,22 @@ export enum DiscoveryMethod {
 
   /**
    * The USB discovery method allows the user to use the device's usb input(s) to interact with Stripe Terminal's usb-capable readers.
+   *
+   * @platform Android
    */
   USB,
 
   /**
-   * The Embedded discovery method allows the user to collect payments using the reader upon which the Application is currently running.
+   * The AppsOnDevices discovery method is for Android apps running directly on a Stripe reader device (e.g. Stripe Reader S700). This is the Android-only replacement for the deprecated Embedded and Handoff discovery methods.
+   *
+   * @platform Android
    */
-  Embedded,
+  AppsOnDevices,
 
   /**
-   * The Handoff discovery method is only supported when running directly on a reader. It allows the user to delegate the collecting of payments to a separate application that is responsible for collecting payments.
+   * The TapToPay discovery method allows the user to use the phone's or tablet's NFC reader as a payment terminal for NFC (tap) payments only.
    */
-  Handoff,
-
-  /**
-   * The LocalMobile discovery method allows the user to use the phone's or tablet's NFC reader as a payment terminal for NFC (tap) payments only.
-   */
-  LocalMobile
+  TapToPay
 }
 
 /**
@@ -314,17 +328,17 @@ export interface UsbConnectionConfiguration extends ConnectionConfiguration {}
 
 /**
  * @category Reader
+ * @platform android
  */
-export interface HandoffConnectionConfiguration
-  extends ConnectionConfiguration {}
+export interface AppsOnDevicesConnectionConfiguration {}
 
 /**
  * @category Reader
  */
-export interface LocalMobileConnectionConfiguration
+export interface TapToPayConnectionConfiguration
   extends ConnectionConfiguration {
   /**
-   * If your integration is creating destination charges and using `on_behalf_of`, you must provide the `connected_account_id` in the `onBehalfOf` parameter as part of the `LocalMobileConnectionConfiguration`. Unlike other reader types which require this information on a per-transaction basis, the Apple Built-In reader requires this on a per-connection basis as well in order to establish a reader connection.
+   * If your integration is creating destination charges and using `on_behalf_of`, you must provide the `connected_account_id` in the `onBehalfOf` parameter as part of the `TapToPayConnectionConfiguration`. Unlike other reader types which require this information on a per-transaction basis, the Apple Built-In reader requires this on a per-connection basis as well in order to establish a reader connection.
    *
    * @see https://stripe.com/docs/terminal/features/connect#destination-payment-intents
    */
@@ -916,17 +930,16 @@ export interface StripeTerminalInterface {
     locationId: string
   }): Promise<{ reader: Reader | null }>
 
-  connectLocalMobileReader(options: {
+  connectAppsOnDevicesReader(options: {
+    serialNumber: string
+  }): Promise<{ reader: Reader | null }>
+
+  connectTapToPayReader(options: {
     serialNumber: string
     locationId: string
     onBehalfOf?: string
     merchantDisplayName?: string
     tosAcceptancePermitted?: boolean
-  }): Promise<{ reader: Reader | null }>
-
-  connectHandoffReader(options: {
-    serialNumber: string
-    locationId: string
   }): Promise<{ reader: Reader | null }>
 
   getConnectedReader(): Promise<{ reader: Reader | null }>

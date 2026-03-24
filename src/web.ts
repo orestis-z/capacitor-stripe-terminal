@@ -69,7 +69,10 @@ const deviceTypes: { [type: string]: DeviceType } = {
   ['chipper_2X']: DeviceType.Chipper2X,
   ['verifone_P400']: DeviceType.VerifoneP400,
   ['bbpos_wisepos_e']: DeviceType.WisePosE,
-  ['stripe_s700']: DeviceType.StripeS700
+  ['stripe_s700']: DeviceType.StripeS700,
+  ['stripe_s700_devkit']: DeviceType.StripeS700DevKit,
+  ['stripe_s710']: DeviceType.StripeS710,
+  ['stripe_s710_devkit']: DeviceType.StripeS710DevKit
 }
 
 /**
@@ -350,25 +353,21 @@ export class StripeTerminalWeb extends WebPlugin {
     console.warn('connectUsbReader is only available on Android.')
     return { reader: null }
   }
-  async connectLocalMobileReader(_config: {
+  async connectAppsOnDevicesReader(_config: {
+    serialNumber: string
+  }): Promise<{ reader: Reader | null }> {
+    // no equivalent
+    console.warn('connectAppsOnDevicesReader is only available on Android.')
+    return { reader: null }
+  }
+  async connectTapToPayReader(_config: {
     serialNumber: string
     locationId: string
   }): Promise<{ reader: Reader | null }> {
     // no equivalent
-    console.warn(
-      'connectLocalMobileReader is only available on iOS and Android.'
-    )
+    console.warn('connectTapToPayReader is only available on iOS and Android.')
     return { reader: null }
   }
-  async connectHandoffReader(_config: {
-    serialNumber: string
-    locationId: string
-  }): Promise<{ reader: Reader | null }> {
-    // no equivalent
-    console.warn('connectHandoffReader is only available on Android.')
-    return { reader: null }
-  }
-
   async getConnectedReader(): Promise<{ reader: Reader | null }> {
     const sdk = this.ensureInitialized()
 
