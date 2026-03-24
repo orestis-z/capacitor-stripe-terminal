@@ -48,14 +48,14 @@ export enum ConnectionStatus {
   NotConnected = 0,
   Connected = 1,
   Connecting = 2,
-  Reconnecting = 3 // NEW in v5
+  Reconnecting = 3, // NEW in v5
 }
 ```
 
 **Action Required**: If you handle connection status changes, ensure your code handles the new `Reconnecting` status.
 
 ```typescript
-terminal.connectionStatus().subscribe(status => {
+const handle = await terminal.connectionStatus((status) => {
   switch (status) {
     case ConnectionStatus.NotConnected:
       // Handle not connected
@@ -122,26 +122,26 @@ To align with the Stripe Terminal SDK naming, all `LocalMobile` references have 
 // Before
 import {
   DiscoveryMethod,
-  LocalMobileConnectionConfiguration
+  LocalMobileConnectionConfiguration,
 } from 'capacitor-stripe-terminal'
 
 terminal.discoverReaders({ discoveryMethod: DiscoveryMethod.LocalMobile })
 terminal.connectLocalMobileReader(
   reader,
-  config as LocalMobileConnectionConfiguration
+  config as LocalMobileConnectionConfiguration,
 )
 terminal.addListener('localMobileReaderDidAcceptTermsOfService', handler)
 
 // After
 import {
   DiscoveryMethod,
-  TapToPayConnectionConfiguration
+  TapToPayConnectionConfiguration,
 } from 'capacitor-stripe-terminal'
 
 terminal.discoverReaders({ discoveryMethod: DiscoveryMethod.TapToPay })
 terminal.connectTapToPayReader(
   reader,
-  config as TapToPayConnectionConfiguration
+  config as TapToPayConnectionConfiguration,
 )
 terminal.addListener('tapToPayReaderDidAcceptTermsOfService', handler)
 ```
@@ -173,9 +173,83 @@ if (reader.deviceType === DeviceType.TapToPay) { ... }
 
 Capacitor v8 includes some internal changes to plugin APIs, but the public API of this plugin remains the same. No changes are required in your application code related to Capacitor v8.
 
-## Mostly Compatible Plugin API
+### 8. Removal of rxjs — Observable API Replaced with Callbacks
 
-The public API of `capacitor-stripe-terminal` is largely unchanged. Most existing code using the plugin will continue to work without modifications. See the Android-specific breaking changes above for the exceptions.
+`rxjs` has been removed as a dependency. All methods that previously returned an `Observable` now accept a callback and return `Promise<PluginListenerHandle>`. Call `handle.remove()` to stop listening instead of calling `subscription.unsubscribe()`.
+
+Affected methods:
+
+| Method                                  | Before                                                               | After                                                                            |
+| --------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `discoverReaders`                       | `discoverReaders(options): Observable<Reader[]>`                     | `discoverReaders(options, callback): Promise<PluginListenerHandle>`              |
+| `connectionStatus`                      | `connectionStatus(): Observable<ConnectionStatus>`                   | `connectionStatus(callback): Promise<PluginListenerHandle>`                      |
+| `didRequestReaderInput`                 | `didRequestReaderInput(): Observable<ReaderInputOptions>`            | `didRequestReaderInput(callback): Promise<PluginListenerHandle>`                 |
+| `didRequestReaderDisplayMessage`        | `didRequestReaderDisplayMessage(): Observable<ReaderDisplayMessage>` | `didRequestReaderDisplayMessage(callback): Promise<PluginListenerHandle>`        |
+| `didReportAvailableUpdate`              | `didReportAvailableUpdate(): Observable<ReaderSoftwareUpdate>`       | `didReportAvailableUpdate(callback): Promise<PluginListenerHandle>`              |
+| `didStartInstallingUpdate`              | `didStartInstallingUpdate(): Observable<ReaderSoftwareUpdate>`       | `didStartInstallingUpdate(callback): Promise<PluginListenerHandle>`              |
+| `didReportReaderSoftwareUpdateProgress` | `didReportReaderSoftwareUpdateProgress(): Observable<number>`        | `didReportReaderSoftwareUpdateProgress(callback): Promise<PluginListenerHandle>` |
+| `didFinishInstallingUpdate`             | `didFinishInstallingUpdate(): Observable<...>`                       | `didFinishInstallingUpdate(callback): Promise<PluginListenerHandle>`             |
+| `didStartReaderReconnect`               | `didStartReaderReconnect(): Observable<void>`                        | `didStartReaderReconnect(callback): Promise<PluginListenerHandle>`               |
+| `didSucceedReaderReconnect`             | `didSucceedReaderReconnect(): Observable<void>`                      | `didSucceedReaderReconnect(callback): Promise<PluginListenerHandle>`             |
+| `didFailReaderReconnect`                | `didFailReaderReconnect(): Observable<void>`                         | `didFailReaderReconnect(callback): Promise<PluginListenerHandle>`                |
+
+**Action Required**: Remove any `rxjs` imports and update all affected call sites.
+
+```typescript
+// Before
+import { Observable } from 'rxjs'
+
+const discoverSub = terminal
+  .discoverReaders({
+    simulated: false,
+    discoveryMethod: DiscoveryMethod.BluetoothScan,
+  })
+  .subscribe((readers) => {
+    console.log('readers', readers)
+  })
+
+const displaySub = terminal
+  .didRequestReaderDisplayMessage()
+  .subscribe((message) => {
+    console.log('displayMessage', message)
+  })
+
+const inputSub = terminal.didRequestReaderInput().subscribe((options) => {
+  console.log('inputOptions', options)
+})
+
+// Later...
+discoverSub.unsubscribe()
+displaySub.unsubscribe()
+inputSub.unsubscribe()
+
+// After
+const discoverHandle = await terminal.discoverReaders(
+  { simulated: false, discoveryMethod: DiscoveryMethod.BluetoothScan },
+  (readers) => {
+    console.log('readers', readers)
+  },
+)
+
+const displayHandle = await terminal.didRequestReaderDisplayMessage(
+  (message) => {
+    console.log('displayMessage', message)
+  },
+)
+
+const inputHandle = await terminal.didRequestReaderInput((options) => {
+  console.log('inputOptions', options)
+})
+
+// Later...
+discoverHandle.remove()
+displayHandle.remove()
+inputHandle.remove()
+```
+
+## Breaking Changes Summary
+
+The public API of `capacitor-stripe-terminal` has several breaking changes in this release. See each section above for full details.
 
 ## Installation
 
@@ -193,7 +267,6 @@ npx cap sync
 ```
 
 3. Update iOS deployment target in Xcode:
-
    - Open your project in Xcode
    - Select your project in the navigator
    - Select your app target
@@ -245,3 +318,4 @@ This upgrade primarily updates the underlying SDKs while maintaining most API co
 - On Android: update any `DeviceType.VerifoneP400` handling to also handle `DeviceType.Unknown`
 - Rename `DiscoveryMethod.LocalMobile` → `DiscoveryMethod.TapToPay`, `LocalMobileConnectionConfiguration` → `TapToPayConnectionConfiguration`, `connectLocalMobileReader()` → `connectTapToPayReader()`, and the `localMobileReaderDidAcceptTermsOfService` event → `tapToPayReaderDidAcceptTermsOfService`
 - Rename `DeviceType.AppleBuiltIn` → `DeviceType.TapToPay` (now covers both iOS and Android Tap to Pay readers)
+- **Remove `rxjs` from your dependencies** and update all Observable-based call sites to use the new callback + `PluginListenerHandle` pattern (call `handle.remove()` instead of `subscription.unsubscribe()`)

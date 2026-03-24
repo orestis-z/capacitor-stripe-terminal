@@ -110,14 +110,14 @@ _Hint: If the user denies Location permission the first time you ask for it, And
 ```javascript
 import {
   StripeTerminalPlugin,
-  DiscoveryMethod
+  DiscoveryMethod,
 } from 'capacitor-stripe-terminal'
 
 // First, initialize the SDK
 const terminal = await StripeTerminalPlugin.create({
   fetchConnectionToken: async () => {
     const resp = await fetch('https://your-backend.dev/token', {
-      method: 'POST'
+      method: 'POST',
     })
     const data = await resp.json()
 
@@ -125,45 +125,43 @@ const terminal = await StripeTerminalPlugin.create({
   },
   onUnexpectedReaderDisconnect: () => {
     // handle reader disconnect
-  }
+  },
 })
 
 // Start scanning for readers
-// capacitor-stripe-terminal uses Observables for any data streams
-// To stop scanning, unsubscribe from the Observable.
+// To stop scanning, call handle.remove() on the returned handle.
 // You must connect to a reader while scanning
-terminal
-  .discoverReaders({
+const discoverHandle = await terminal.discoverReaders(
+  {
     simulated: false,
-    discoveryMethod: DiscoveryMethod.BluetoothProximity
-  })
-  .subscribe(readers => {
+    discoveryMethod: DiscoveryMethod.BluetoothProximity,
+  },
+  (readers) => {
     if (readers.length) {
       const selectedReader = readers[0]
       const connectionConfig = {
-        locationId: '{{LOCATION_ID}}'
+        locationId: '{{LOCATION_ID}}',
       }
       terminal
         .connectBluetoothReader(selectedReader, connectionConfig)
-        .then(connectedReader => {
+        .then((connectedReader) => {
           // the reader is now connected and usable
         })
     }
-  })
+  },
+)
 
 // Once the reader is connected, collect a payment intent!
 
-// subscribe to user instructions - these should be displayed to the user
-const displaySubscription = terminal
-  .didRequestReaderDisplayMessage()
-  .subscribe(displayMessage => {
+// listen to user instructions - these should be displayed to the user
+const displayHandle = await terminal.didRequestReaderDisplayMessage(
+  (displayMessage) => {
     console.log('displayMessage', displayMessage)
-  })
-const inputSubscription = terminal
-  .didRequestReaderInput()
-  .subscribe(inputOptions => {
-    console.log('inputOptions', inputOptions)
-  })
+  },
+)
+const inputHandle = await terminal.didRequestReaderInput((inputOptions) => {
+  console.log('inputOptions', inputOptions)
+})
 
 // retrieve the payment intent
 await terminal.retrievePaymentIntent('your client secret created server side')
@@ -174,9 +172,10 @@ await terminal.collectPaymentMethod()
 // and finally, process the payment
 await terminal.processPayment()
 
-// once you are done, make sure to unsubscribe (e.g. in ngOnDestroy)
-displaySubscription.unsubscribe()
-inputSubscription.unsubscribe()
+// once you are done, remove the listeners (e.g. in ngOnDestroy)
+discoverHandle.remove()
+displayHandle.remove()
+inputHandle.remove()
 ```
 
 ## API Reference

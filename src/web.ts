@@ -1,4 +1,3 @@
-import { Subject } from 'rxjs'
 import { WebPlugin } from '@capacitor/core'
 import {
   DiscoveryConfiguration,
@@ -155,7 +154,8 @@ export class StripeTerminalWeb extends WebPlugin {
   private currentPaymentIntent: ISdkManagedPaymentIntent | null = null
   private currentConnectionToken: string | null = null
 
-  private connectionTokenCompletionSubject = new Subject<TokenResponse>()
+  private connectionTokenCallbacks: Array<(response: TokenResponse) => void> =
+    []
 
   constructor() {
     super()
@@ -196,10 +196,10 @@ export class StripeTerminalWeb extends WebPlugin {
     }
 
     this.currentConnectionToken = options.token
-    this.connectionTokenCompletionSubject.next({
-      token: options.token,
-      errorMessage,
-    })
+    const callbacks = this.connectionTokenCallbacks.splice(0)
+    for (const cb of callbacks) {
+      cb({ token: options.token, errorMessage })
+    }
   }
 
   async initialize(): Promise<void> {
@@ -214,16 +214,13 @@ export class StripeTerminalWeb extends WebPlugin {
         return new Promise((resolve, reject) => {
           this.notifyListeners('requestConnectionToken', null)
 
-          const sub = this.connectionTokenCompletionSubject.subscribe(
-            ({ token, errorMessage }) => {
-              if (errorMessage || !token) {
-                sub.unsubscribe()
-                return reject(new Error(errorMessage ?? 'No token found'))
-              }
+          this.connectionTokenCallbacks.push(({ token, errorMessage }) => {
+            if (errorMessage || !token) {
+              return reject(new Error(errorMessage ?? 'No token found'))
+            }
 
-              return resolve(token)
-            },
-          )
+            return resolve(token)
+          })
         })
       },
       onUnexpectedReaderDisconnect: async () => {

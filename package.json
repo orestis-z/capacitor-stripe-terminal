@@ -18,8 +18,7 @@
   "dependencies": {
     "@capacitor/core": "^8.0.2",
     "@stripe/terminal-js": "^0.26.0",
-    "lodash": "^4.17.21",
-    "rxjs": "^7.5.6"
+    "lodash": "^4.17.21"
   },
   "devDependencies": {
     "@capacitor/android": "^8.2.0",
