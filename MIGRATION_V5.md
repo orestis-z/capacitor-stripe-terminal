@@ -1,23 +1,25 @@
-# Migration Guide: Upgrading to Capacitor v8 and Stripe Terminal SDK v5
+# Migration Guide: v3 → v5 (Capacitor v8 + Stripe Terminal SDK v5)
 
-This guide covers the breaking changes when upgrading from Capacitor v4 with Stripe Terminal SDK v2 to Capacitor v8 with Stripe Terminal SDK v5.
+This guide covers the breaking changes when upgrading to `capacitor-stripe-terminal` v5.
 
-## Overview
+> **Note on version numbering:** `capacitor-stripe-terminal` jumps from v3 directly to v5, skipping v4. This was intentional — the version was bumped to v5 to stay in sync with the Stripe Terminal native SDKs, which are also on v5.
 
-This update includes:
+## What Changed
 
-- **Capacitor**: v4.0.0 → v8.0.2
-- **Stripe Terminal SDK (iOS)**: v2.17.1 → v5.3.0
-- **Stripe Terminal SDK (Android)**: v2.17.1 → v5.3.0
-- **@stripe/terminal-js**: v0.11.0 → v0.26.0
+| Package                       | Before  | After   |
+| ----------------------------- | ------- | ------- |
+| `capacitor-stripe-terminal`   | v3.x    | v5.x    |
+| Capacitor                     | v4.0.0  | v8.0.2  |
+| Stripe Terminal SDK (iOS)     | v2.17.1 | v5.3.0  |
+| Stripe Terminal SDK (Android) | v2.17.1 | v5.3.0  |
+| `@stripe/terminal-js`         | v0.11.0 | v0.26.0 |
 
 ## Requirements
 
 ### iOS
 
-- **Minimum iOS version**: 15.0 (increased from 13.0)
-- **Xcode**: 16.0+ with Swift 6.2
-- **Platform**: iOS 15.0+
+- **Minimum deployment target**: iOS 15.0 (up from 13.0)
+- **Xcode**: 16.0+
 
 ### Android
 
@@ -29,162 +31,33 @@ This update includes:
 
 - **Capacitor**: 8.x
 
+## Upgrade Steps
+
+1. Update dependencies:
+
+```bash
+npm install capacitor-stripe-terminal@latest
+npm install @capacitor/core@8 @capacitor/ios@8 @capacitor/android@8
+```
+
+2. Sync native files:
+
+```bash
+npx cap sync
+```
+
+3. Update the iOS deployment target:
+   - Open your project in Xcode
+   - Select your app target → **General** → **Deployment Info**
+   - Set **Minimum Deployments** to **iOS 15.0**
+
+4. Apply the breaking changes listed below.
+
 ## Breaking Changes
 
-### 1. iOS Minimum Deployment Target
+### 1. `rxjs` removed — Observable API replaced with callbacks
 
-The minimum iOS deployment target has been increased from 13.0 to 15.0.
-
-**Action Required**: Update your app's iOS deployment target in Xcode to 15.0 or higher.
-
-### 2. New Connection Status: Reconnecting
-
-A new connection status `Reconnecting` has been added to the `ConnectionStatus` enum.
-
-```typescript
-export enum ConnectionStatus {
-  NotConnected = 0,
-  Connected = 1,
-  Connecting = 2,
-  Reconnecting = 3, // NEW in v5
-}
-```
-
-**Action Required**: If you handle connection status changes, ensure your code handles the new `Reconnecting` status.
-
-```typescript
-const handle = await terminal.connectionStatus((status) => {
-  switch (status) {
-    case ConnectionStatus.NotConnected:
-      // Handle not connected
-      break
-    case ConnectionStatus.Connected:
-      // Handle connected
-      break
-    case ConnectionStatus.Connecting:
-      // Handle connecting
-      break
-    case ConnectionStatus.Reconnecting: // NEW
-      // Handle auto-reconnect in progress
-      break
-  }
-})
-```
-
-### 3. `Embedded` and `Handoff` Replaced by `AppsOnDevices` (Android)
-
-The `Embedded` and `Handoff` discovery methods have been removed and replaced by `DiscoveryMethod.AppsOnDevices`, which is the Stripe Terminal Android SDK v5's unified replacement for apps running directly on a reader device (e.g. Stripe Reader S700). This method is Android-only.
-
-`connectHandoffReader` has been replaced by `connectAppsOnDevicesReader`, which uses `ConnectionConfiguration.AppsOnDevicesConnectionConfiguration` from the Stripe Terminal Android SDK v5.
-
-| Before                           | After                                  |
-| -------------------------------- | -------------------------------------- |
-| `DiscoveryMethod.Embedded`       | `DiscoveryMethod.AppsOnDevices`        |
-| `DiscoveryMethod.Handoff`        | `DiscoveryMethod.AppsOnDevices`        |
-| `HandoffConnectionConfiguration` | `AppsOnDevicesConnectionConfiguration` |
-| `connectHandoffReader()`         | `connectAppsOnDevicesReader()`         |
-
-```typescript
-// Before
-discoverReaders({ discoveryMethod: DiscoveryMethod.Embedded })
-discoverReaders({ discoveryMethod: DiscoveryMethod.Handoff })
-connectHandoffReader(reader, config as HandoffConnectionConfiguration)
-
-// After
-discoverReaders({ discoveryMethod: DiscoveryMethod.AppsOnDevices })
-connectAppsOnDevicesReader(reader)
-```
-
-**Action Required**: Replace any usage of `DiscoveryMethod.Embedded` or `DiscoveryMethod.Handoff` with `DiscoveryMethod.AppsOnDevices`. Replace `connectHandoffReader` calls with `connectAppsOnDevicesReader`.
-
-### 4. `VerifoneP400` Device Type Removed
-
-The `DeviceType.VerifoneP400` enum value has been removed from this plugin. The Verifone P400 countertop reader is no longer supported by the Stripe Terminal SDK v5.
-
-**Action Required**: Remove any references to `DeviceType.VerifoneP400` in your code.
-
-```typescript
-// Before
-if (reader.deviceType === DeviceType.VerifoneP400) {
-  // handle Verifone P400
-}
-
-// After — remove this code path entirely; the Verifone P400 is no longer supported
-```
-
-### 5. `LocalMobile` Renamed to `TapToPay`
-
-To align with the Stripe Terminal SDK naming, all `LocalMobile` references have been renamed to `TapToPay`.
-
-| Before                                           | After                                         |
-| ------------------------------------------------ | --------------------------------------------- |
-| `DiscoveryMethod.LocalMobile`                    | `DiscoveryMethod.TapToPay`                    |
-| `LocalMobileConnectionConfiguration`             | `TapToPayConnectionConfiguration`             |
-| `connectLocalMobileReader()`                     | `connectTapToPayReader()`                     |
-| event `localMobileReaderDidAcceptTermsOfService` | event `tapToPayReaderDidAcceptTermsOfService` |
-
-**Action Required**: Update all usages in your code:
-
-```typescript
-// Before
-import {
-  DiscoveryMethod,
-  LocalMobileConnectionConfiguration,
-} from 'capacitor-stripe-terminal'
-
-terminal.discoverReaders({ discoveryMethod: DiscoveryMethod.LocalMobile })
-terminal.connectLocalMobileReader(
-  reader,
-  config as LocalMobileConnectionConfiguration,
-)
-terminal.addListener('localMobileReaderDidAcceptTermsOfService', handler)
-
-// After
-import {
-  DiscoveryMethod,
-  TapToPayConnectionConfiguration,
-} from 'capacitor-stripe-terminal'
-
-terminal.discoverReaders({ discoveryMethod: DiscoveryMethod.TapToPay })
-terminal.connectTapToPayReader(
-  reader,
-  config as TapToPayConnectionConfiguration,
-)
-terminal.addListener('tapToPayReaderDidAcceptTermsOfService', handler)
-```
-
-### 6. `AppleBuiltIn` Renamed to `TapToPay` in `DeviceType`; Android Support Added
-
-`DeviceType.AppleBuiltIn` has been renamed to `DeviceType.TapToPay` to reflect that this device type now covers both the iOS Tap to Pay reader and the Android Tap to Pay device. The numeric value (`11`) is unchanged.
-
-New device types have also been added for the Stripe S700 DevKit, S710, and S710 DevKit readers:
-
-| Added                                      | Value |
-| ------------------------------------------ | ----- |
-| `DeviceType.StripeS700DevKit`              | `10`  |
-| `DeviceType.TapToPay` (was `AppleBuiltIn`) | `11`  |
-| `DeviceType.StripeS710`                    | `12`  |
-| `DeviceType.StripeS710DevKit`              | `13`  |
-
-**Action Required**: Replace any usage of `DeviceType.AppleBuiltIn` with `DeviceType.TapToPay`.
-
-```typescript
-// Before
-if (reader.deviceType === DeviceType.AppleBuiltIn) { ... }
-
-// After
-if (reader.deviceType === DeviceType.TapToPay) { ... }
-```
-
-### 7. Capacitor v8 API Changes
-
-Capacitor v8 includes some internal changes to plugin APIs, but the public API of this plugin remains the same. No changes are required in your application code related to Capacitor v8.
-
-### 8. Removal of rxjs — Observable API Replaced with Callbacks
-
-`rxjs` has been removed as a dependency. All methods that previously returned an `Observable` now accept a callback and return `Promise<PluginListenerHandle>`. Call `handle.remove()` to stop listening instead of calling `subscription.unsubscribe()`.
-
-Affected methods:
+`rxjs` has been removed as a dependency. All methods that previously returned an `Observable` now accept a callback and return `Promise<PluginListenerHandle>`. Call `handle.remove()` to stop listening instead of `subscription.unsubscribe()`.
 
 | Method                                  | Before                                                               | After                                                                            |
 | --------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
@@ -199,8 +72,6 @@ Affected methods:
 | `didStartReaderReconnect`               | `didStartReaderReconnect(): Observable<void>`                        | `didStartReaderReconnect(callback): Promise<PluginListenerHandle>`               |
 | `didSucceedReaderReconnect`             | `didSucceedReaderReconnect(): Observable<void>`                      | `didSucceedReaderReconnect(callback): Promise<PluginListenerHandle>`             |
 | `didFailReaderReconnect`                | `didFailReaderReconnect(): Observable<void>`                         | `didFailReaderReconnect(callback): Promise<PluginListenerHandle>`                |
-
-**Action Required**: Remove any `rxjs` imports and update all affected call sites.
 
 ```typescript
 // Before
@@ -254,15 +125,13 @@ displayHandle.remove()
 inputHandle.remove()
 ```
 
-### 9. `processPayment` Renamed to `confirmPaymentIntent`
+### 2. `processPayment` renamed to `confirmPaymentIntent`
 
-The `processPayment` method has been renamed to `confirmPaymentIntent` to match the underlying native Stripe Terminal SDK function name.
+`processPayment` has been renamed to `confirmPaymentIntent` to match the underlying Stripe Terminal SDK.
 
 | Before             | After                    |
 | ------------------ | ------------------------ |
 | `processPayment()` | `confirmPaymentIntent()` |
-
-**Action Required**: Replace all calls to `processPayment()` with `confirmPaymentIntent()`.
 
 ```typescript
 // Before
@@ -272,42 +141,163 @@ await terminal.processPayment()
 await terminal.confirmPaymentIntent()
 ```
 
-### 10. `confirmPaymentIntent` Error Shape — Structured Decline Data
+### 3. `LocalMobile` renamed to `TapToPay`
 
-`confirmPaymentIntent` can now surface `decline_code` and `payment_intent` on the thrown `StripeTerminalError` when a card is declined.
+All `LocalMobile` identifiers have been renamed to `TapToPay` to align with the Stripe Terminal SDK.
 
-Previously, catching a `confirmPaymentIntent` failure and reading `error.decline_code` or `error.payment_intent` always returned `undefined` because the native layers did not attach structured data to their rejections. This is now fixed on both platforms.
+| Before                                            | After                                          |
+| ------------------------------------------------- | ---------------------------------------------- |
+| `DiscoveryMethod.LocalMobile`                     | `DiscoveryMethod.TapToPay`                     |
+| `LocalMobileConnectionConfiguration`              | `TapToPayConnectionConfiguration`              |
+| `connectLocalMobileReader()`                      | `connectTapToPayReader()`                      |
+| event: `localMobileReaderDidAcceptTermsOfService` | event: `tapToPayReaderDidAcceptTermsOfService` |
 
-**Error shape (TypeScript):**
+```typescript
+// Before
+import {
+  DiscoveryMethod,
+  LocalMobileConnectionConfiguration,
+} from 'capacitor-stripe-terminal'
+
+terminal.discoverReaders({ discoveryMethod: DiscoveryMethod.LocalMobile })
+terminal.connectLocalMobileReader(
+  reader,
+  config as LocalMobileConnectionConfiguration,
+)
+terminal.addListener('localMobileReaderDidAcceptTermsOfService', handler)
+
+// After
+import {
+  DiscoveryMethod,
+  TapToPayConnectionConfiguration,
+} from 'capacitor-stripe-terminal'
+
+terminal.discoverReaders({ discoveryMethod: DiscoveryMethod.TapToPay })
+terminal.connectTapToPayReader(
+  reader,
+  config as TapToPayConnectionConfiguration,
+)
+terminal.addListener('tapToPayReaderDidAcceptTermsOfService', handler)
+```
+
+### 4. `DeviceType.AppleBuiltIn` renamed to `DeviceType.TapToPay`; new device types added
+
+`DeviceType.AppleBuiltIn` has been renamed to `DeviceType.TapToPay` to reflect that it now covers both iOS and Android Tap to Pay. The numeric value (`11`) is unchanged.
+
+New device type values have also been added:
+
+| Change                      | Name                          | Value |
+| --------------------------- | ----------------------------- | ----- |
+| Added                       | `DeviceType.StripeS700DevKit` | `10`  |
+| Renamed from `AppleBuiltIn` | `DeviceType.TapToPay`         | `11`  |
+| Added                       | `DeviceType.StripeS710`       | `12`  |
+| Added                       | `DeviceType.StripeS710DevKit` | `13`  |
+
+```typescript
+// Before
+if (reader.deviceType === DeviceType.AppleBuiltIn) { ... }
+
+// After
+if (reader.deviceType === DeviceType.TapToPay) { ... }
+```
+
+### 5. `Embedded` and `Handoff` discovery methods replaced by `AppsOnDevices` (Android)
+
+The `Embedded` and `Handoff` discovery methods have been removed. They are replaced by `DiscoveryMethod.AppsOnDevices`, the Stripe Terminal Android SDK v5's unified method for apps running directly on a reader device (e.g. Stripe Reader S700). This method is Android-only.
+
+`connectHandoffReader` has been replaced by `connectAppsOnDevicesReader`.
+
+| Before                           | After                                  |
+| -------------------------------- | -------------------------------------- |
+| `DiscoveryMethod.Embedded`       | `DiscoveryMethod.AppsOnDevices`        |
+| `DiscoveryMethod.Handoff`        | `DiscoveryMethod.AppsOnDevices`        |
+| `HandoffConnectionConfiguration` | `AppsOnDevicesConnectionConfiguration` |
+| `connectHandoffReader()`         | `connectAppsOnDevicesReader()`         |
+
+```typescript
+// Before
+discoverReaders({ discoveryMethod: DiscoveryMethod.Embedded })
+discoverReaders({ discoveryMethod: DiscoveryMethod.Handoff })
+connectHandoffReader(reader, config as HandoffConnectionConfiguration)
+
+// After
+discoverReaders({ discoveryMethod: DiscoveryMethod.AppsOnDevices })
+connectAppsOnDevicesReader(reader)
+```
+
+### 6. `DeviceType.VerifoneP400` removed
+
+The Verifone P400 is no longer supported by Stripe Terminal SDK v5. `DeviceType.VerifoneP400` has been removed.
+
+```typescript
+// Before
+if (reader.deviceType === DeviceType.VerifoneP400) {
+  // handle Verifone P400
+}
+
+// After — remove this code path entirely
+```
+
+### 7. New `ConnectionStatus.Reconnecting` value
+
+A new `Reconnecting` value has been added to the `ConnectionStatus` enum to represent an in-progress auto-reconnect.
+
+```typescript
+export enum ConnectionStatus {
+  NotConnected = 0,
+  Connected = 1,
+  Connecting = 2,
+  Reconnecting = 3, // new in v5
+}
+```
+
+If you handle all connection status values (e.g. in a `switch` statement), add a case for `ConnectionStatus.Reconnecting`.
+
+```typescript
+const handle = await terminal.connectionStatus((status) => {
+  switch (status) {
+    case ConnectionStatus.NotConnected:
+      break
+    case ConnectionStatus.Connected:
+      break
+    case ConnectionStatus.Connecting:
+      break
+    case ConnectionStatus.Reconnecting: // new
+      // auto-reconnect is in progress
+      break
+  }
+})
+```
+
+### 8. `confirmPaymentIntent` now surfaces structured decline data
+
+`confirmPaymentIntent` now populates `decline_code` and `payment_intent` on the thrown `StripeTerminalError` when a card is declined. Previously these fields were always `undefined` because the native layers did not attach structured data to their rejections.
 
 ```typescript
 try {
   await terminal.confirmPaymentIntent()
 } catch (error) {
   if (error instanceof StripeTerminalError) {
-    // Always present on decline — the human-readable reason
-    console.log(error.message)
-
-    // Now populated on card declines (was always undefined before)
-    console.log(error.decline_code) // e.g. "insufficient_funds"
-    console.log(error.payment_intent) // the updated PaymentIntent object (status: requires_payment_method)
+    console.log(error.message) // human-readable reason, always present
+    console.log(error.decline_code) // e.g. "insufficient_funds" (now populated on declines)
+    console.log(error.payment_intent) // updated PaymentIntent (status: requires_payment_method)
   }
 }
 ```
 
-**Action Required**: If your code previously checked `error.decline_code` or `error.payment_intent` after a `confirmPaymentIntent` failure, those fields are now populated. No code changes are required to benefit from this, but you may want to add handling for them.
+No code changes are required to benefit from this fix, but you may want to add handling for `decline_code` and `payment_intent` if your app does not already.
 
-**Note on error guard change**: The internal `StripeTerminalError` construction was also made more robust. Previously, if the native side returned an error without a data payload, the raw error was re-thrown unmodified (not as a `StripeTerminalError`). Now, any error with a message is always wrapped in `StripeTerminalError`, with `decline_code` and `payment_intent` populated only when the native side provides them.
+> **Note:** Error wrapping is also more consistent. Previously, if the native side returned an error without a data payload, the raw error was re-thrown without being wrapped in `StripeTerminalError`. Now, any error with a message is always wrapped in `StripeTerminalError`.
 
-### 11. `Charge.status` Is Now a `ChargeStatus` Enum (was a string on Android / integer on iOS)
+### 9. `Charge.status` is now a `ChargeStatus` enum
 
-Previously, the `status` field of each `Charge` object in `PaymentIntent.charges` was inconsistent between platforms:
+`charge.status` was previously inconsistent across platforms:
 
-- **iOS** returned a raw integer (the `SCPChargeStatus` enum `rawValue`, e.g. `0`)
-- **Android** returned a raw string (e.g. `"succeeded"`)
-- **Web** passed through the Stripe SDK string directly (e.g. `"succeeded"`)
+- **iOS**: raw integer (`SCPChargeStatus` enum `rawValue`, e.g. `0`)
+- **Android**: raw string (e.g. `"succeeded"`)
+- **Web**: raw string passed through from the Stripe JS SDK (e.g. `"succeeded"`)
 
-All three platforms now return the same `ChargeStatus` enum integer.
+All platforms now return the same `ChargeStatus` enum value:
 
 ```typescript
 export enum ChargeStatus {
@@ -317,12 +307,12 @@ export enum ChargeStatus {
 }
 ```
 
-**Action Required**: Update any code that reads `charge.status`.
+Update any code that compares `charge.status` to a raw string or integer:
 
 ```typescript
-// Before — unreliable, platform-dependent
-if (charge.status === 'succeeded') { ... }   // only worked on Android/Web
-if (charge.status === 0) { ... }             // only worked on iOS
+// Before — platform-dependent, unreliable
+if (charge.status === 'succeeded') { ... }  // Android/Web only
+if (charge.status === 0) { ... }            // iOS only
 
 // After — consistent across all platforms
 import { ChargeStatus } from 'capacitor-stripe-terminal'
@@ -330,18 +320,18 @@ import { ChargeStatus } from 'capacitor-stripe-terminal'
 if (charge.status === ChargeStatus.Succeeded) { ... }
 ```
 
-### 12. `PaymentIntent.charges` Now Uses Plugin-Local `Charge` Interface (was `Stripe.Charge`)
+### 10. `PaymentIntent.charges` type changed from `Stripe.Charge[]` to `Charge[]`
 
-The type of `PaymentIntent.charges` has changed from `Stripe.Charge[]` (the Stripe Node.js SDK type) to `Charge[]`, a new interface defined in this plugin. This ensures the returned shape is consistent across iOS, Android, and Web and avoids pulling in a server-side SDK type for a client-side value.
+`PaymentIntent.charges` now uses the plugin-defined `Charge` interface instead of `Stripe.Charge` from the `stripe` Node.js package. This ensures a consistent shape across iOS, Android, and Web, and avoids importing a server-side type in client code.
 
-The `Charge` interface includes all fields that were already being serialized by the native platforms:
+The `Charge` interface covers all fields already serialized by the native platforms:
 
 ```typescript
 export interface Charge {
   stripeId: string
   amount: number
   currency: string
-  status: ChargeStatus // enum — see breaking change #11
+  status: ChargeStatus
   metadata: { [key: string]: string }
   stripeDescription: string | null
   statementDescriptorSuffix: string | null
@@ -361,7 +351,7 @@ export interface Charge {
 }
 ```
 
-**Action Required**: If your code imports `Stripe.Charge` from the `stripe` package to type charge objects returned by this plugin, switch to importing `Charge` from `capacitor-stripe-terminal` instead.
+If you were typing charges with `Stripe.Charge`, switch to the plugin's `Charge` type:
 
 ```typescript
 // Before
@@ -373,42 +363,15 @@ import { Charge } from 'capacitor-stripe-terminal'
 const charge: Charge = paymentIntent.charges[0]
 ```
 
-## Breaking Changes Summary
+### 11. iOS minimum deployment target increased to 15.0
 
-The public API of `capacitor-stripe-terminal` has several breaking changes in this release. See each section above for full details.
+The minimum iOS deployment target has been raised from 13.0 to 15.0.
 
-## Installation
+Update your app's iOS deployment target in Xcode to **15.0** or higher (see [Upgrade Steps](#upgrade-steps) above).
 
-1. Update your dependencies:
+### 12. Capacitor v4 → v8 upgrade
 
-```bash
-npm install capacitor-stripe-terminal@latest
-npm install @capacitor/core@8 @capacitor/ios@8 @capacitor/android@8
-```
-
-2. Sync native files:
-
-```bash
-npx cap sync
-```
-
-3. Update iOS deployment target in Xcode:
-   - Open your project in Xcode
-   - Select your project in the navigator
-   - Select your app target
-   - Under "Deployment Info", set "Minimum Deployment" to iOS 15.0
-
-4. Clean and rebuild your project:
-
-```bash
-# iOS
-npx cap open ios
-# Then clean build folder in Xcode (Cmd+Shift+K) and rebuild
-
-# Android
-npx cap open android
-# Then clean and rebuild in Android Studio
-```
+This plugin upgrades the peer dependency from Capacitor v4 to Capacitor v8. Follow the [official Capacitor v8 migration guide](https://capacitorjs.com/docs/updating/8-0) to update your app.
 
 ## Testing Your Migration
 
