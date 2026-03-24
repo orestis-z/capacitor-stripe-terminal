@@ -102,6 +102,7 @@ _Hint: If the user denies Location permission the first time you ask for it, And
 ```javascript
 import {
   StripeTerminalPlugin,
+  StripeTerminalError,
   DiscoveryMethod,
 } from 'capacitor-stripe-terminal'
 
@@ -164,13 +165,19 @@ await terminal.retrievePaymentIntent('your client secret created server side')
 // collect the payment method
 await terminal.collectPaymentMethod()
 
-// and finally, process the payment
-await terminal.confirmPaymentIntent()
+// and finally, confirm the payment intent
+try {
+  await terminal.confirmPaymentIntent()
+} catch (err) {
+  if (err instanceof StripeTerminalError) {
+    // structured decline data is available on card declines
+    console.error('decline_code', err.decline_code)
+  }
+  throw err
+}
 
-// once you are done, remove the listeners (e.g. in ngOnDestroy)
-discoverHandle.remove()
-displayHandle.remove()
-inputHandle.remove()
+// once you are done, call destroy() to remove all listeners and reset the plugin (e.g. in ngOnDestroy)
+await terminal.destroy()
 ```
 
 ## API Reference
