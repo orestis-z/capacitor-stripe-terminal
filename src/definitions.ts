@@ -558,7 +558,7 @@ export enum PaymentIntentStatus {
   RequiresPaymentMethod,
 
   /**
-   * Next step: process the payment by calling `processPayment`.
+   * Next step: process the payment by calling `confirmPaymentIntent`.
    */
   RequiresConfirmation,
 
@@ -952,7 +952,7 @@ export interface StripeTerminalInterface {
 
   cancelCollectPaymentMethod(): Promise<void>
 
-  processPayment(): Promise<{ intent: PaymentIntent }>
+  confirmPaymentIntent(): Promise<{ intent: PaymentIntent }>
 
   clearCachedCredentials(): Promise<void>
 

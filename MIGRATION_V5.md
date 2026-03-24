@@ -254,17 +254,35 @@ displayHandle.remove()
 inputHandle.remove()
 ```
 
-### 9. `processPayment` Error Shape — Structured Decline Data
+### 9. `processPayment` Renamed to `confirmPaymentIntent`
 
-`processPayment` (which calls `confirmPaymentIntent` in the native SDKs) can now surface `decline_code` and `payment_intent` on the thrown `StripeTerminalError` when a card is declined.
+The `processPayment` method has been renamed to `confirmPaymentIntent` to match the underlying native Stripe Terminal SDK function name.
 
-Previously, catching a `processPayment` failure and reading `error.decline_code` or `error.payment_intent` always returned `undefined` because the native layers did not attach structured data to their rejections. This is now fixed on both platforms.
+| Before             | After                    |
+| ------------------ | ------------------------ |
+| `processPayment()` | `confirmPaymentIntent()` |
+
+**Action Required**: Replace all calls to `processPayment()` with `confirmPaymentIntent()`.
+
+```typescript
+// Before
+await terminal.processPayment()
+
+// After
+await terminal.confirmPaymentIntent()
+```
+
+### 10. `confirmPaymentIntent` Error Shape — Structured Decline Data
+
+`confirmPaymentIntent` can now surface `decline_code` and `payment_intent` on the thrown `StripeTerminalError` when a card is declined.
+
+Previously, catching a `confirmPaymentIntent` failure and reading `error.decline_code` or `error.payment_intent` always returned `undefined` because the native layers did not attach structured data to their rejections. This is now fixed on both platforms.
 
 **Error shape (TypeScript):**
 
 ```typescript
 try {
-  await terminal.processPayment()
+  await terminal.confirmPaymentIntent()
 } catch (error) {
   if (error instanceof StripeTerminalError) {
     // Always present on decline — the human-readable reason
@@ -277,7 +295,7 @@ try {
 }
 ```
 
-**Action Required**: If your code previously checked `error.decline_code` or `error.payment_intent` after a `processPayment` failure, those fields are now populated. No code changes are required to benefit from this, but you may want to add handling for them.
+**Action Required**: If your code previously checked `error.decline_code` or `error.payment_intent` after a `confirmPaymentIntent` failure, those fields are now populated. No code changes are required to benefit from this, but you may want to add handling for them.
 
 **Note on error guard change**: The internal `StripeTerminalError` construction was also made more robust. Previously, if the native side returned an error without a data payload, the raw error was re-thrown unmodified (not as a `StripeTerminalError`). Now, any error with a message is always wrapped in `StripeTerminalError`, with `decline_code` and `payment_intent` populated only when the native side provides them.
 
@@ -353,4 +371,5 @@ This upgrade primarily updates the underlying SDKs while maintaining most API co
 - Rename `DiscoveryMethod.LocalMobile` → `DiscoveryMethod.TapToPay`, `LocalMobileConnectionConfiguration` → `TapToPayConnectionConfiguration`, `connectLocalMobileReader()` → `connectTapToPayReader()`, and the `localMobileReaderDidAcceptTermsOfService` event → `tapToPayReaderDidAcceptTermsOfService`
 - Rename `DeviceType.AppleBuiltIn` → `DeviceType.TapToPay` (now covers both iOS and Android Tap to Pay readers)
 - **Remove `rxjs` from your dependencies** and update all Observable-based call sites to use the new callback + `PluginListenerHandle` pattern (call `handle.remove()` instead of `subscription.unsubscribe()`)
-- `processPayment` errors are now always thrown as `StripeTerminalError`; `decline_code` and `payment_intent` fields are now populated on card declines (no action required, but you may now read these fields in your catch handler)
+- Rename `processPayment()` → `confirmPaymentIntent()` (matches the native Stripe Terminal SDK function name)
+- `confirmPaymentIntent` errors are now always thrown as `StripeTerminalError`; `decline_code` and `payment_intent` fields are now populated on card declines (no action required, but you may now read these fields in your catch handler)

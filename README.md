@@ -165,7 +165,7 @@ await terminal.retrievePaymentIntent('your client secret created server side')
 await terminal.collectPaymentMethod()
 
 // and finally, process the payment
-await terminal.processPayment()
+await terminal.confirmPaymentIntent()
 
 // once you are done, remove the listeners (e.g. in ngOnDestroy)
 discoverHandle.remove()

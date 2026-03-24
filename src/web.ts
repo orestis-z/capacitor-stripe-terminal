@@ -57,7 +57,7 @@ interface CollectPaymentMethodResult {
 /**
  * @ignore
  */
-interface ProcessPaymentResult {
+interface ConfirmPaymentIntentResult {
   paymentIntent: IPaymentIntent
 }
 
@@ -522,7 +522,7 @@ export class StripeTerminalWeb extends WebPlugin {
     await sdk.cancelCollectPaymentMethod()
   }
 
-  async processPayment(): Promise<{ intent: PaymentIntent }> {
+  async confirmPaymentIntent(): Promise<{ intent: PaymentIntent }> {
     const sdk = this.ensureInitialized()
 
     if (!this.currentPaymentIntent) {
@@ -532,8 +532,9 @@ export class StripeTerminalWeb extends WebPlugin {
     }
     const result = await sdk.processPayment(this.currentPaymentIntent)
 
-    if ((result as ProcessPaymentResult).paymentIntent) {
-      const res: ProcessPaymentResult = result as ProcessPaymentResult
+    if ((result as ConfirmPaymentIntentResult).paymentIntent) {
+      const res: ConfirmPaymentIntentResult =
+        result as ConfirmPaymentIntentResult
 
       return {
         intent: {

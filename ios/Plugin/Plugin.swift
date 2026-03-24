@@ -412,7 +412,7 @@ public class StripeTerminal: CAPPlugin, ConnectionTokenProvider, DiscoveryDelega
         }
     }
 
-    @objc func processPayment(_ call: CAPPluginCall) {
+    @objc func confirmPaymentIntent(_ call: CAPPluginCall) {
         thread.async {
             if let intent = self.currentPaymentIntent {
                 Terminal.shared.confirmPaymentIntent(intent) { paymentIntent, error in

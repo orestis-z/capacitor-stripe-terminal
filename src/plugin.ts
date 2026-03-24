@@ -818,11 +818,11 @@ export class StripeTerminalPlugin {
     return await this.sdk.cancelCollectPaymentMethod()
   }
 
-  public async processPayment(): Promise<PaymentIntent | null> {
+  public async confirmPaymentIntent(): Promise<PaymentIntent | null> {
     try {
       this.ensureInitialized()
 
-      const data = await this.sdk.processPayment()
+      const data = await this.sdk.confirmPaymentIntent()
 
       const pi = this.objectExists(data?.intent)
 

@@ -637,7 +637,7 @@ public class StripeTerminal
   }
 
   @PluginMethod
-  public void processPayment(final PluginCall call) {
+  public void confirmPaymentIntent(final PluginCall call) {
     if (currentPaymentIntent != null) {
       Terminal
         .getInstance()
