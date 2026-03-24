@@ -27,7 +27,7 @@ import {
   DeviceStyle,
   PermissionStatus,
   ReaderSoftwareUpdate,
-  CollectConfig
+  CollectConfig,
 } from './definitions'
 
 import { StripeTerminal } from './plugin-registration'
@@ -117,19 +117,19 @@ export class StripeTerminalPlugin {
     }
 
     this._fetchConnectionToken()
-      .then(token => {
+      .then((token) => {
         if (token) {
           sdk.setConnectionToken({ token })
         } else {
           throw new Error(
-            'User-supplied `fetchConnectionToken` resolved successfully, but no token was returned.'
+            'User-supplied `fetchConnectionToken` resolved successfully, but no token was returned.',
           )
         }
       })
-      .catch(err => {
+      .catch((err) => {
         sdk.setConnectionToken(
           null,
-          err.message || 'Error in user-supplied `fetchConnectionToken`.'
+          err.message || 'Error in user-supplied `fetchConnectionToken`.',
         )
       })
   }
@@ -142,7 +142,7 @@ export class StripeTerminalPlugin {
 
     this.listeners['connectionTokenListenerNative'] =
       await StripeTerminal.addListener('requestConnectionToken', () =>
-        this.requestConnectionToken('native')
+        this.requestConnectionToken('native'),
       )
 
     this.listeners['unexpectedReaderDisconnectListenerNative'] =
@@ -150,13 +150,13 @@ export class StripeTerminalPlugin {
         'didReportUnexpectedReaderDisconnect',
         () => {
           this._onUnexpectedReaderDisconnect()
-        }
+        },
       )
 
     if (this.stripeTerminalWeb) {
       this.listeners['connectionTokenListenerJs'] =
         await this.stripeTerminalWeb.addListener('requestConnectionToken', () =>
-          this.requestConnectionToken('js')
+          this.requestConnectionToken('js'),
         )
 
       this.listeners['unexpectedReaderDisconnectListenerJs'] =
@@ -164,13 +164,13 @@ export class StripeTerminalPlugin {
           'didReportUnexpectedReaderDisconnect',
           () => {
             this._onUnexpectedReaderDisconnect()
-          }
+          },
         )
     }
 
     await Promise.all([
       StripeTerminal.initialize(),
-      this.stripeTerminalWeb?.initialize()
+      this.stripeTerminalWeb?.initialize(),
     ])
 
     this.isInitialized = true
@@ -248,9 +248,9 @@ export class StripeTerminalPlugin {
       | 'didStartReaderReconnect'
       | 'didSucceedReaderReconnect'
       | 'didFailReaderReconnect',
-    transformFunc?: (data: any) => any
+    transformFunc?: (data: any) => any,
   ): Observable<any> {
-    return new Observable(subscriber => {
+    return new Observable((subscriber) => {
       let listenerNative: PluginListenerHandle
       let listenerJs: PluginListenerHandle
 
@@ -263,7 +263,7 @@ export class StripeTerminalPlugin {
 
           return subscriber.next(data)
         }
-      }).then(l => {
+      }).then((l) => {
         listenerNative = l
       })
 
@@ -279,7 +279,7 @@ export class StripeTerminalPlugin {
               return subscriber.next(data)
             }
           })
-          .then(l => {
+          .then((l) => {
             listenerJs = l
           })
       }
@@ -288,7 +288,7 @@ export class StripeTerminalPlugin {
         unsubscribe: () => {
           listenerNative?.remove()
           listenerJs?.remove()
-        }
+        },
       }
     })
   }
@@ -296,7 +296,7 @@ export class StripeTerminalPlugin {
   private ensureInitialized() {
     if (!this.isInitialized) {
       throw new Error(
-        'StripeTerminalPlugin must be initialized before you can use any methods.'
+        'StripeTerminalPlugin must be initialized before you can use any methods.',
       )
     }
   }
@@ -336,7 +336,7 @@ export class StripeTerminalPlugin {
    * @param options [[StripeTerminalPlugin]] options.
    */
   public static async create(
-    options: StripeTerminalConfig
+    options: StripeTerminalConfig,
   ): Promise<StripeTerminalPlugin> {
     const terminal = new StripeTerminalPlugin(options)
 
@@ -356,7 +356,7 @@ export class StripeTerminalPlugin {
 
       await Promise.all([
         StripeTerminal.cancelDiscoverReaders(),
-        this.stripeTerminalWeb?.cancelDiscoverReaders()
+        this.stripeTerminalWeb?.cancelDiscoverReaders(),
       ])
 
       this.isDiscovering = false
@@ -431,11 +431,11 @@ export class StripeTerminalPlugin {
   }
 
   public discoverReaders(
-    options: DiscoveryConfiguration
+    options: DiscoveryConfiguration,
   ): Observable<Reader[]> {
     this.ensureInitialized()
 
-    return new Observable(subscriber => {
+    return new Observable((subscriber) => {
       let nativeReaderList: Reader[] = []
       let jsReaderList: Reader[] = []
 
@@ -454,7 +454,7 @@ export class StripeTerminalPlugin {
           // combine the reader list with the latest reader list from the js sdk
           subscriber.next([...nativeReaderList, ...jsReaderList])
         })
-        .then(l => {
+        .then((l) => {
           this.listeners['readersDiscoveredNative'] = l
         })
 
@@ -463,7 +463,7 @@ export class StripeTerminalPlugin {
         discoveryMethod:
           options.discoveryMethod === DiscoveryMethod.Both
             ? DiscoveryMethod.BluetoothScan
-            : options.discoveryMethod
+            : options.discoveryMethod,
       }
 
       if (nativeOptions.discoveryMethod !== DiscoveryMethod.Internet) {
@@ -497,13 +497,13 @@ export class StripeTerminalPlugin {
             // combine the reader list with the latest reader list from the native sdk
             subscriber.next([...nativeReaderList, ...jsReaderList])
           })
-          .then(l => {
+          .then((l) => {
             this.listeners['readersDiscoveredJs'] = l
           })
 
         const jsOptions: DiscoveryConfiguration = {
           ...options,
-          discoveryMethod: DiscoveryMethod.Internet // discovery method is always going to be internet for the js sdk, although, it really doesn't matter because it will be ignored anyway
+          discoveryMethod: DiscoveryMethod.Internet, // discovery method is always going to be internet for the js sdk, although, it really doesn't matter because it will be ignored anyway
         }
 
         // TODO: figure out what to do with errors and completion on this method. maybe just ignore them?
@@ -513,7 +513,7 @@ export class StripeTerminalPlugin {
       return {
         unsubscribe: () => {
           this.cancelDiscoverReaders()
-        }
+        },
       }
     })
   }
@@ -525,7 +525,7 @@ export class StripeTerminalPlugin {
    */
   public async connectBluetoothReader(
     reader: Reader,
-    config: BluetoothConnectionConfiguration
+    config: BluetoothConnectionConfiguration,
   ): Promise<Reader | null> {
     this.ensureInitialized()
 
@@ -534,7 +534,7 @@ export class StripeTerminalPlugin {
 
     const data = await this.sdk.connectBluetoothReader({
       serialNumber: reader.serialNumber,
-      ...config
+      ...config,
     })
 
     return this.objectExists(data?.reader)
@@ -547,7 +547,7 @@ export class StripeTerminalPlugin {
    */
   public async connectUsbReader(
     reader: Reader,
-    config: UsbConnectionConfiguration
+    config: UsbConnectionConfiguration,
   ): Promise<Reader | null> {
     this.ensureInitialized()
 
@@ -556,7 +556,7 @@ export class StripeTerminalPlugin {
 
     const data = await this.sdk.connectUsbReader({
       serialNumber: reader.serialNumber,
-      locationId: config.locationId
+      locationId: config.locationId,
     })
 
     return this.objectExists(data?.reader)
@@ -569,7 +569,7 @@ export class StripeTerminalPlugin {
    */
   public async connectAppsOnDevicesReader(
     reader: Reader,
-    _config?: AppsOnDevicesConnectionConfiguration
+    _config?: AppsOnDevicesConnectionConfiguration,
   ): Promise<Reader | null> {
     this.ensureInitialized()
 
@@ -577,7 +577,7 @@ export class StripeTerminalPlugin {
     this.selectedSdkType = 'native'
 
     const data = await this.sdk.connectAppsOnDevicesReader({
-      serialNumber: reader.serialNumber
+      serialNumber: reader.serialNumber,
     })
 
     return this.objectExists(data?.reader)
@@ -590,7 +590,7 @@ export class StripeTerminalPlugin {
    */
   public async connectTapToPayReader(
     reader: Reader,
-    config: TapToPayConnectionConfiguration
+    config: TapToPayConnectionConfiguration,
   ): Promise<Reader | null> {
     this.ensureInitialized()
 
@@ -599,7 +599,7 @@ export class StripeTerminalPlugin {
 
     const data = await this.sdk.connectTapToPayReader({
       serialNumber: reader.serialNumber,
-      ...config
+      ...config,
     })
 
     return this.objectExists(data?.reader)
@@ -612,7 +612,7 @@ export class StripeTerminalPlugin {
    */
   public async connectInternetReader(
     reader: Reader,
-    config?: InternetConnectionConfiguration
+    config?: InternetConnectionConfiguration,
   ): Promise<Reader | null> {
     this.ensureInitialized()
 
@@ -623,7 +623,7 @@ export class StripeTerminalPlugin {
       serialNumber: reader.serialNumber,
       ipAddress: reader.ipAddress ?? undefined,
       stripeId: reader.stripeId ?? undefined,
-      ...config
+      ...config,
     })
 
     return this.objectExists(data?.reader)
@@ -673,12 +673,12 @@ export class StripeTerminalPlugin {
   public connectionStatus(): Observable<ConnectionStatus> {
     this.ensureInitialized()
 
-    return new Observable(subscriber => {
+    return new Observable((subscriber) => {
       let hasSentEvent = false
 
       // get current value
       this.getConnectionStatus()
-        .then(data => {
+        .then((data) => {
           // only send the initial value if the event listener hasn't already
           if (!hasSentEvent) {
             subscriber.next(data)
@@ -698,7 +698,7 @@ export class StripeTerminalPlugin {
           hasSentEvent = true
           subscriber.next(data?.status)
         }
-      }).then(l => {
+      }).then((l) => {
         listenerNative = l
       })
 
@@ -711,7 +711,7 @@ export class StripeTerminalPlugin {
             subscriber.next(data?.status)
           }
         })
-        .then(l => {
+        .then((l) => {
           listenerJs = l
         })
 
@@ -719,7 +719,7 @@ export class StripeTerminalPlugin {
         unsubscribe: () => {
           listenerNative?.remove()
           listenerJs?.remove()
-        }
+        },
       }
     })
   }
@@ -747,7 +747,7 @@ export class StripeTerminalPlugin {
       'didRequestReaderDisplayMessage',
       (data: any) => {
         return parseFloat(data.value)
-      }
+      },
     )
   }
 
@@ -756,7 +756,7 @@ export class StripeTerminalPlugin {
       'didReportAvailableUpdate',
       (data: { update: ReaderSoftwareUpdate }) => {
         return this.objectExists(data?.update)
-      }
+      },
     )
   }
 
@@ -765,7 +765,7 @@ export class StripeTerminalPlugin {
       'didStartInstallingUpdate',
       (data: { update: ReaderSoftwareUpdate }) => {
         return this.objectExists(data?.update)
-      }
+      },
     )
   }
 
@@ -774,7 +774,7 @@ export class StripeTerminalPlugin {
       'didReportReaderSoftwareUpdateProgress',
       (data: any) => {
         return parseFloat(data.progress)
-      }
+      },
     )
   }
 
@@ -786,12 +786,12 @@ export class StripeTerminalPlugin {
       'didFinishInstallingUpdate',
       (data: { update?: ReaderSoftwareUpdate; error?: string }) => {
         return this.objectExists(data)
-      }
+      },
     )
   }
 
   public async retrievePaymentIntent(
-    clientSecret: string
+    clientSecret: string,
   ): Promise<PaymentIntent | null> {
     this.ensureInitialized()
 
@@ -803,7 +803,7 @@ export class StripeTerminalPlugin {
   }
 
   public async collectPaymentMethod(
-    collectConfig?: CollectConfig
+    collectConfig?: CollectConfig,
   ): Promise<PaymentIntent | null> {
     if (this.isCollectingPaymentMethod) {
       return null
@@ -903,7 +903,7 @@ export class StripeTerminalPlugin {
     if (config?.simulatedCard !== null && config?.simulatedCard !== undefined) {
       // the simulated card type comes back as a string of the enum name so that needs to be converted back to an enum
       config.simulatedCard = this.simulatedCardTypeStringToEnum(
-        config.simulatedCard
+        config.simulatedCard,
       )
 
       this.simulatedCardType = config.simulatedCard
@@ -931,7 +931,7 @@ export class StripeTerminalPlugin {
     ) {
       // the simulated card type comes back as a string of the enum name so that needs to be converted back to an enum
       newConfig.simulatedCard = this.simulatedCardTypeStringToEnum(
-        newConfig.simulatedCard
+        newConfig.simulatedCard,
       )
     } else if (this.objectExists(newConfig)) {
       newConfig.simulatedCard = config.simulatedCard

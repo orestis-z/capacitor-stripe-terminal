@@ -26,7 +26,7 @@ export enum ConnectionStatus {
    * The SDK is currently reconnecting to a reader (auto-reconnect in progress).
    * Added in Stripe Terminal SDK v5.
    */
-  Reconnecting = 3
+  Reconnecting = 3,
 }
 
 /**
@@ -48,7 +48,7 @@ export enum PaymentStatus {
   /**
    * The SDK is processing a payment.
    */
-  Processing = 3
+  Processing = 3,
 }
 
 /**
@@ -125,7 +125,7 @@ export enum DeviceType {
   /**
    * The Stripe S710 DevKit countertop reader.
    */
-  StripeS710DevKit = 13
+  StripeS710DevKit = 13,
 }
 
 /**
@@ -182,7 +182,7 @@ export enum DiscoveryMethod {
   /**
    * The TapToPay discovery method allows the user to use the phone's or tablet's NFC reader as a payment terminal for NFC (tap) payments only.
    */
-  TapToPay
+  TapToPay,
 }
 
 /**
@@ -199,7 +199,7 @@ export enum ReaderNetworkStatus {
   /**
    * The reader is online.
    */
-  Online
+  Online,
 }
 
 /**
@@ -223,7 +223,7 @@ export enum BatteryStatus {
   /**
    * The device’s battery is greater than 20%.
    */
-  Nominal
+  Nominal,
 }
 
 /**
@@ -246,7 +246,7 @@ export enum LocationStatus {
   /**
    * This location is known to be not set. `location` will be null.
    */
-  NotSet
+  NotSet,
 }
 
 export interface StripeTerminalConfig {
@@ -521,7 +521,7 @@ export enum ReaderDisplayMessage {
   /**
    * The card is invalid. Try another card.
    */
-  TryAnotherCard
+  TryAnotherCard,
 }
 
 /**
@@ -549,7 +549,7 @@ export enum ReaderInputOptions {
   /**
    * Tap a contactless card.
    */
-  TapCard = 1 << 2
+  TapCard = 1 << 2,
 }
 
 /**
@@ -587,7 +587,7 @@ export enum PaymentIntentStatus {
   /**
    * The PaymentIntent succeeded.
    */
-  Succeeded
+  Succeeded,
 }
 
 /**
@@ -836,7 +836,7 @@ export enum SimulatedCardType {
   ChargeDeclinedStolenCard,
   ChargeDeclinedExpiredCard,
   ChargeDeclinedProcessingError,
-  RefundFailed
+  RefundFailed,
 }
 
 export enum SimulateReaderUpdate {
@@ -849,13 +849,13 @@ export enum SimulateReaderUpdate {
   // A required update exists. When the SDK connects to the reader, the connection will fail because the reader's battery is too low for the update to begin.
   LowBattery,
   // Randomly picks a type of update for the reader to help exercise the various states.
-  Random
+  Random,
 }
 
 export enum DeviceStyle {
   Internet,
   Bluetooth,
-  Local
+  Local,
 }
 
 export interface TippingConfig {
@@ -895,7 +895,7 @@ export interface StripeTerminalInterface {
     options: {
       token?: string
     } | null,
-    errorMessage?: string
+    errorMessage?: string,
   ): Promise<void>
 
   initialize(): Promise<void>
@@ -968,13 +968,13 @@ export interface StripeTerminalInterface {
   clearReaderDisplay(): Promise<void>
 
   listLocations(
-    parameters?: ListLocationsParameters
+    parameters?: ListLocationsParameters,
   ): Promise<{ locations?: Location[]; hasMore?: boolean }>
 
   getSimulatorConfiguration(): Promise<SimulatorConfiguration>
 
   setSimulatorConfiguration(
-    config: SimulatorConfiguration
+    config: SimulatorConfiguration,
   ): Promise<SimulatorConfiguration>
 
   cancelAutoReconnect(): Promise<void>
@@ -989,37 +989,37 @@ export interface StripeTerminalInterface {
 
   addListener(
     eventName: 'requestConnectionToken',
-    listenerFunc: () => void
+    listenerFunc: () => void,
   ): Promise<PluginListenerHandle> & PluginListenerHandle
 
   addListener(
     eventName: 'didReportUnexpectedReaderDisconnect',
-    listenerFunc: () => void
+    listenerFunc: () => void,
   ): Promise<PluginListenerHandle> & PluginListenerHandle
 
   addListener(
     eventName: 'readersDiscovered',
-    listenerFunc: (event: { readers?: Reader[] }) => void
+    listenerFunc: (event: { readers?: Reader[] }) => void,
   ): Promise<PluginListenerHandle> & PluginListenerHandle
 
   addListener(
     eventName: 'didChangeConnectionStatus',
-    listenerFunc: (status: any) => void
+    listenerFunc: (status: any) => void,
   ): Promise<PluginListenerHandle> & PluginListenerHandle
 
   addListener(
     eventName: 'didReportReaderSoftwareUpdateProgress',
-    listenerFunc: (data: any) => void
+    listenerFunc: (data: any) => void,
   ): Promise<PluginListenerHandle> & PluginListenerHandle
 
   addListener(
     eventName: 'didRequestReaderDisplayMessage' | 'didRequestReaderInput',
-    listenerFunc: (data: any) => void
+    listenerFunc: (data: any) => void,
   ): Promise<PluginListenerHandle> & PluginListenerHandle
 
   addListener(
     eventName: 'didReportAvailableUpdate' | 'didStartInstallingUpdate',
-    listenerFunc: (data: any) => void
+    listenerFunc: (data: any) => void,
   ): Promise<PluginListenerHandle> & PluginListenerHandle
 
   addListener(
@@ -1027,7 +1027,7 @@ export interface StripeTerminalInterface {
     listenerFunc: (data: {
       update?: ReaderSoftwareUpdate
       error?: string
-    }) => void
+    }) => void,
   ): Promise<PluginListenerHandle> & PluginListenerHandle
 
   addListener(
@@ -1035,11 +1035,11 @@ export interface StripeTerminalInterface {
       | 'didStartReaderReconnect'
       | 'didSucceedReaderReconnect'
       | 'didFailReaderReconnect',
-    listenerFunc: (data: null) => void
+    listenerFunc: (data: null) => void,
   ): Promise<PluginListenerHandle> & PluginListenerHandle
 
   addListener(
     eventName: string,
-    listenerFunc: Function
+    listenerFunc: Function,
   ): Promise<PluginListenerHandle> & PluginListenerHandle
 }

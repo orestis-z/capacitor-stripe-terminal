@@ -17,7 +17,7 @@ import {
   SimulatorConfiguration,
   PermissionStatus,
   Cart,
-  CollectConfig
+  CollectConfig,
 } from './definitions'
 import {
   loadStripeTerminal,
@@ -29,7 +29,7 @@ import {
   Location as StripeLocation,
   ISdkManagedPaymentIntent,
   IPaymentIntent,
-  ISetReaderDisplayRequest
+  ISetReaderDisplayRequest,
 } from '@stripe/terminal-js'
 import { Stripe } from 'stripe'
 
@@ -72,7 +72,7 @@ const deviceTypes: { [type: string]: DeviceType } = {
   ['stripe_s700']: DeviceType.StripeS700,
   ['stripe_s700_devkit']: DeviceType.StripeS700DevKit,
   ['stripe_s710']: DeviceType.StripeS710,
-  ['stripe_s710_devkit']: DeviceType.StripeS710DevKit
+  ['stripe_s710_devkit']: DeviceType.StripeS710DevKit,
 }
 
 /**
@@ -80,7 +80,7 @@ const deviceTypes: { [type: string]: DeviceType } = {
  */
 const readerStatuses: { [status: string]: ReaderNetworkStatus } = {
   online: ReaderNetworkStatus.Online,
-  offline: ReaderNetworkStatus.Offline
+  offline: ReaderNetworkStatus.Offline,
 }
 
 /**
@@ -89,7 +89,7 @@ const readerStatuses: { [status: string]: ReaderNetworkStatus } = {
 const connectionStatus: { [status: string]: ConnectionStatus } = {
   connecting: ConnectionStatus.Connecting,
   connected: ConnectionStatus.Connected,
-  not_connected: ConnectionStatus.NotConnected
+  not_connected: ConnectionStatus.NotConnected,
 }
 
 /**
@@ -118,7 +118,7 @@ const testPaymentMethodMap: { [method: string]: SimulatedCardType } = {
   charge_declined_expired_card: SimulatedCardType.ChargeDeclinedExpiredCard,
   charge_declined_processing_error:
     SimulatedCardType.ChargeDeclinedProcessingError,
-  refund_fail: SimulatedCardType.RefundFailed
+  refund_fail: SimulatedCardType.RefundFailed,
 }
 
 /**
@@ -130,7 +130,7 @@ const paymentIntentStatus: { [status: string]: PaymentIntentStatus } = {
   requires_capture: PaymentIntentStatus.RequiresCapture,
   processing: PaymentIntentStatus.Processing,
   canceled: PaymentIntentStatus.Canceled,
-  succeeded: PaymentIntentStatus.Succeeded
+  succeeded: PaymentIntentStatus.Succeeded,
 }
 
 /**
@@ -140,7 +140,7 @@ const paymentStatus: { [status: string]: PaymentStatus } = {
   not_ready: PaymentStatus.NotReady,
   ready: PaymentStatus.Ready,
   waiting_for_input: PaymentStatus.WaitingForInput,
-  processing: PaymentStatus.Processing
+  processing: PaymentStatus.Processing,
 }
 
 /**
@@ -164,7 +164,7 @@ export class StripeTerminalWeb extends WebPlugin {
   private ensureInitialized(): Terminal {
     if (!this.instance) {
       throw new Error(
-        'StripeTerminalPlugin must be initialized before you can use any methods.'
+        'StripeTerminalPlugin must be initialized before you can use any methods.',
       )
     }
 
@@ -189,7 +189,7 @@ export class StripeTerminalWeb extends WebPlugin {
     options: {
       token?: string
     } | null,
-    errorMessage?: string
+    errorMessage?: string,
   ): Promise<void> {
     if (!options?.token) {
       return
@@ -198,7 +198,7 @@ export class StripeTerminalWeb extends WebPlugin {
     this.currentConnectionToken = options.token
     this.connectionTokenCompletionSubject.next({
       token: options.token,
-      errorMessage
+      errorMessage,
     })
   }
 
@@ -222,25 +222,25 @@ export class StripeTerminalWeb extends WebPlugin {
               }
 
               return resolve(token)
-            }
+            },
           )
         })
       },
       onUnexpectedReaderDisconnect: async () => {
         this.notifyListeners('didReportUnexpectedReaderDisconnect', {
-          reader: null
+          reader: null,
         })
       },
-      onConnectionStatusChange: async event => {
+      onConnectionStatusChange: async (event) => {
         this.notifyListeners('didChangeConnectionStatus', {
-          status: connectionStatus[event.status]
+          status: connectionStatus[event.status],
         })
       },
-      onPaymentStatusChange: async event => {
+      onPaymentStatusChange: async (event) => {
         this.notifyListeners('didChangePaymentStatus', {
-          status: event.status
+          status: event.status,
         })
-      }
+      },
     })
   }
 
@@ -259,7 +259,7 @@ export class StripeTerminalWeb extends WebPlugin {
       ipAddress: sdkReader.ip_address,
       locationId: this.isInstanceOfLocation(sdkReader.location)
         ? sdkReader.location.id
-        : sdkReader.location ?? null,
+        : (sdkReader.location ?? null),
       label: sdkReader.label,
       deviceSoftwareVersion: sdkReader.device_sw_version,
       batteryStatus: BatteryStatus.Unknown,
@@ -267,7 +267,7 @@ export class StripeTerminalWeb extends WebPlugin {
       isCharging: null,
       locationStatus: LocationStatus.Unknown,
       livemode: sdkReader.livemode,
-      simulated: this.simulated
+      simulated: this.simulated,
     }
   }
 
@@ -277,7 +277,7 @@ export class StripeTerminalWeb extends WebPlugin {
     this.simulated = !!options.simulated
     const discoveryConfig: InternetMethodConfiguration = {
       simulated: options.simulated,
-      location: options.locationId
+      location: options.locationId,
     }
 
     const discoverResult = await sdk.discoverReaders(discoveryConfig)
@@ -286,11 +286,11 @@ export class StripeTerminalWeb extends WebPlugin {
       const discover: DiscoverResult = discoverResult as DiscoverResult
 
       const readers: Reader[] = discover?.discoveredReaders?.map(
-        this.translateReader.bind(this)
+        this.translateReader.bind(this),
       )
 
       this.notifyListeners('readersDiscovered', {
-        readers
+        readers,
       })
     } else {
       const error: ErrorResponse = discoverResult as ErrorResponse
@@ -318,11 +318,11 @@ export class StripeTerminalWeb extends WebPlugin {
       id: options.stripeId,
       object: 'terminal.reader',
       ip_address: options.ipAddress ?? null,
-      serial_number: options.serialNumber
+      serial_number: options.serialNumber,
     }
 
     const connectResult = await sdk.connectReader(readerOpts, {
-      fail_if_in_use: options.failIfInUse
+      fail_if_in_use: options.failIfInUse,
     })
 
     if ((connectResult as ConnectResult).reader) {
@@ -387,7 +387,7 @@ export class StripeTerminalWeb extends WebPlugin {
 
     const status = sdk.getConnectionStatus()
     return {
-      status: connectionStatus[status]
+      status: connectionStatus[status],
     }
   }
 
@@ -397,7 +397,7 @@ export class StripeTerminalWeb extends WebPlugin {
     const status = sdk.getPaymentStatus()
 
     return {
-      status: paymentStatus[status]
+      status: paymentStatus[status],
     }
   }
 
@@ -426,7 +426,7 @@ export class StripeTerminalWeb extends WebPlugin {
     const isFetchSupported = 'fetch' in window
     if (!isFetchSupported) {
       return {
-        intent: null
+        intent: null,
       }
     }
 
@@ -437,14 +437,14 @@ export class StripeTerminalWeb extends WebPlugin {
 
     const stripeUrl = new URL(
       `/v1/payment_intents/${paymentIntentId}`,
-      this.STRIPE_API_BASE
+      this.STRIPE_API_BASE,
     )
     stripeUrl.searchParams.append('client_secret', options.clientSecret)
 
     const response = await fetch(stripeUrl.href, {
       headers: {
-        Authorization: `Bearer ${this.currentConnectionToken}`
-      }
+        Authorization: `Bearer ${this.currentConnectionToken}`,
+      },
     })
 
     const json = await response.json()
@@ -468,19 +468,19 @@ export class StripeTerminalWeb extends WebPlugin {
             : paymentIntent.payment_method,
         amountDetails: paymentIntent.amount_details,
         charges: paymentIntent.charges?.data ?? [],
-        metadata: paymentIntent.metadata
-      }
+        metadata: paymentIntent.metadata,
+      },
     }
   }
 
   async collectPaymentMethod(
-    collectConfig?: CollectConfig
+    collectConfig?: CollectConfig,
   ): Promise<{ intent: PaymentIntent }> {
     const sdk = this.ensureInitialized()
 
     if (!this.currentClientSecret) {
       throw new Error(
-        'No `clientSecret` was found. Make sure to run `retrievePaymentIntent` before running this method.'
+        'No `clientSecret` was found. Make sure to run `retrievePaymentIntent` before running this method.',
       )
     }
     const result = await sdk.collectPaymentMethod(this.currentClientSecret, {
@@ -488,9 +488,9 @@ export class StripeTerminalWeb extends WebPlugin {
         update_payment_intent: collectConfig?.updatePaymentIntent,
         skip_tipping: collectConfig?.skipTipping,
         tipping: {
-          eligible_amount: collectConfig?.tipping?.eligibleAmount
-        }
-      }
+          eligible_amount: collectConfig?.tipping?.eligibleAmount,
+        },
+      },
     })
 
     if ((result as CollectPaymentMethodResult).paymentIntent) {
@@ -510,8 +510,8 @@ export class StripeTerminalWeb extends WebPlugin {
             .payment_method as Stripe.PaymentMethod,
           amountDetails: this.currentPaymentIntent.amount_details,
           charges: this.currentPaymentIntent.charges?.data ?? [],
-          metadata: this.currentPaymentIntent.metadata
-        }
+          metadata: this.currentPaymentIntent.metadata,
+        },
       }
     } else {
       const error: ErrorResponse = result as ErrorResponse
@@ -530,7 +530,7 @@ export class StripeTerminalWeb extends WebPlugin {
 
     if (!this.currentPaymentIntent) {
       throw new Error(
-        'No `paymentIntent` was found. Make sure to run `collectPaymentMethod` before running this method.'
+        'No `paymentIntent` was found. Make sure to run `collectPaymentMethod` before running this method.',
       )
     }
     const result = await sdk.processPayment(this.currentPaymentIntent)
@@ -549,8 +549,8 @@ export class StripeTerminalWeb extends WebPlugin {
             .payment_method as Stripe.PaymentMethod,
           amountDetails: res.paymentIntent.amount_details,
           charges: res.paymentIntent.charges?.data ?? [],
-          metadata: res.paymentIntent.metadata
-        }
+          metadata: res.paymentIntent.metadata,
+        },
       }
     } else {
       const error: ErrorResponse = result as ErrorResponse
@@ -569,16 +569,16 @@ export class StripeTerminalWeb extends WebPlugin {
 
     const readerDisplay: ISetReaderDisplayRequest = {
       cart: {
-        line_items: cart.lineItems.map(li => ({
+        line_items: cart.lineItems.map((li) => ({
           amount: li.amount,
           description: li.displayName,
-          quantity: li.quantity
+          quantity: li.quantity,
         })),
         currency: cart.currency,
         tax: cart.tax,
-        total: cart.total
+        total: cart.total,
       },
-      type: 'cart'
+      type: 'cart',
     }
 
     await sdk.setReaderDisplay(readerDisplay)
@@ -591,7 +591,7 @@ export class StripeTerminalWeb extends WebPlugin {
   }
 
   async listLocations(
-    options?: ListLocationsParameters
+    options?: ListLocationsParameters,
   ): Promise<{ locations?: Location[]; hasMore?: boolean }> {
     // make sure fetch is supported
     const isFetchSupported = 'fetch' in window
@@ -613,8 +613,8 @@ export class StripeTerminalWeb extends WebPlugin {
 
     const response = await fetch(stripeUrl.href, {
       headers: {
-        Authorization: `Bearer ${this.currentConnectionToken}`
-      }
+        Authorization: `Bearer ${this.currentConnectionToken}`,
+      },
     })
 
     const json = await response.json()
@@ -634,14 +634,14 @@ export class StripeTerminalWeb extends WebPlugin {
           line1: l.address?.line1,
           line2: l.address?.line2,
           postalCode: l.address?.postal_code,
-          state: l.address?.state
-        }
-      })
+          state: l.address?.state,
+        },
+      }),
     )
 
     return {
       locations,
-      hasMore: json.has_more
+      hasMore: json.has_more,
     }
   }
 
@@ -653,12 +653,12 @@ export class StripeTerminalWeb extends WebPlugin {
     return {
       simulatedCard: config.testPaymentMethod
         ? testPaymentMethodMap[config.testPaymentMethod]
-        : undefined
+        : undefined,
     }
   }
 
   async setSimulatorConfiguration(
-    config: SimulatorConfiguration
+    config: SimulatorConfiguration,
   ): Promise<SimulatorConfiguration> {
     const sdk = this.ensureInitialized()
 
@@ -675,11 +675,11 @@ export class StripeTerminalWeb extends WebPlugin {
     }
 
     sdk.setSimulatorConfiguration({
-      testPaymentMethod
+      testPaymentMethod,
     })
 
     return {
-      simulatedCard: config.simulatedCard
+      simulatedCard: config.simulatedCard,
     }
   }
 
