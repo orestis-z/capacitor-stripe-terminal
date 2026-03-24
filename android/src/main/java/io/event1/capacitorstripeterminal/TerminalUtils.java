@@ -2,20 +2,17 @@ package io.event1.capacitorstripeterminal;
 
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
-import com.squareup.moshi.Moshi;
+import com.google.gson.Gson;
 import com.stripe.stripeterminal.external.models.Address;
 import com.stripe.stripeterminal.external.models.AmountDetails;
-import com.stripe.stripeterminal.external.models.AmountDetailsJsonAdapter;
 import com.stripe.stripeterminal.external.models.Charge;
-import com.stripe.stripeterminal.external.models.ChargeJsonAdapter;
 import com.stripe.stripeterminal.external.models.ConnectionStatus;
 import com.stripe.stripeterminal.external.models.DeviceType;
-import com.stripe.stripeterminal.external.models.DiscoveryMethod;
+import com.stripe.stripeterminal.external.models.DiscoveryConfiguration;
 import com.stripe.stripeterminal.external.models.Location;
 import com.stripe.stripeterminal.external.models.PaymentIntent;
 import com.stripe.stripeterminal.external.models.PaymentIntentStatus;
 import com.stripe.stripeterminal.external.models.PaymentMethod;
-import com.stripe.stripeterminal.external.models.PaymentMethodJsonAdapter;
 import com.stripe.stripeterminal.external.models.PaymentStatus;
 import com.stripe.stripeterminal.external.models.Reader;
 import com.stripe.stripeterminal.external.models.ReaderDisplayMessage;
@@ -116,31 +113,23 @@ public class TerminalUtils {
       paymentIntent.getStatementDescriptorSuffix()
     );
 
-    Moshi moshi = new Moshi.Builder().build();
+    Gson gson = new Gson();
 
     PaymentMethod paymentMethod = paymentIntent.getPaymentMethod();
     AmountDetails amountDetails = paymentIntent.getAmountDetails();
 
     if (amountDetails != null) {
-      AmountDetailsJsonAdapter adapter = new AmountDetailsJsonAdapter(moshi);
-      String amountDetailsString = adapter.toJson(amountDetails);
-      object.put("amountDetails", amountDetailsString);
+      object.put("amountDetails", gson.toJson(amountDetails));
     }
 
     if (paymentMethod != null) {
-      PaymentMethodJsonAdapter paymentMethodAdapter = new PaymentMethodJsonAdapter(
-        moshi
-      );
-      String paymentMethodString = paymentMethodAdapter.toJson(paymentMethod);
-      object.put("paymentMethod", paymentMethodString);
+      object.put("paymentMethod", gson.toJson(paymentMethod));
     }
 
     JSArray charges = new JSArray();
     if (paymentIntent.getCharges() != null) {
-      ChargeJsonAdapter adapter = new ChargeJsonAdapter(moshi);
-
       for (Charge charge : paymentIntent.getCharges()) {
-        charges.put(adapter.toJson(charge));
+        charges.put(gson.toJson(charge));
       }
     }
     object.put("charges", charges);
@@ -165,16 +154,13 @@ public class TerminalUtils {
 
     JSObject object = new JSObject();
 
-    ReaderSoftwareUpdate.UpdateTimeEstimate updateTimeEstimate = readerSoftwareUpdate.getTimeEstimate();
+    ReaderSoftwareUpdate.UpdateDurationEstimate durationEstimate = readerSoftwareUpdate.getDurationEstimate();
 
-    object.put(
-      "estimatedUpdateTimeString",
-      updateTimeEstimate.getDescription()
-    );
-    object.put("estimatedUpdateTime", updateTimeEstimate.ordinal());
+    object.put("estimatedUpdateTimeString", durationEstimate.getDescription());
+    object.put("estimatedUpdateTime", durationEstimate.ordinal());
     object.put("deviceSoftwareVersion", readerSoftwareUpdate.getVersion());
     object.put("components", readerSoftwareUpdate.getComponents());
-    object.put("requiredAt", readerSoftwareUpdate.getRequiredAt().getTime());
+    object.put("requiredAt", readerSoftwareUpdate.getRequiredAtMs());
 
     return object;
   }
@@ -233,23 +219,31 @@ public class TerminalUtils {
     return object;
   }
 
-  public static DiscoveryMethod translateDiscoveryMethod(Integer method) {
-    if (method == 0) {
-      return DiscoveryMethod.BLUETOOTH_SCAN;
-    } else if (method == 1) {
-      return DiscoveryMethod.BLUETOOTH_SCAN;
-    } else if (method == 2) {
-      return DiscoveryMethod.INTERNET;
+  public static DiscoveryConfiguration translateDiscoveryMethod(
+    Integer method,
+    boolean simulated
+  ) {
+    if (method == 2) {
+      return new DiscoveryConfiguration.InternetDiscoveryConfiguration(
+        0,
+        null,
+        simulated,
+        null
+      );
     } else if (method == 4) {
-      return DiscoveryMethod.USB;
+      return new DiscoveryConfiguration.UsbDiscoveryConfiguration(0, simulated);
     } else if (method == 5) {
-      return DiscoveryMethod.EMBEDDED;
+      return new DiscoveryConfiguration.AppsOnDevicesDiscoveryConfiguration();
     } else if (method == 6) {
-      return DiscoveryMethod.HANDOFF;
-    } else if (method == 7) {
-      return DiscoveryMethod.LOCAL_MOBILE;
+      return new DiscoveryConfiguration.TapToPayDiscoveryConfiguration(
+        simulated
+      );
     } else {
-      return DiscoveryMethod.BLUETOOTH_SCAN;
+      // Default: Bluetooth scan (methods 0, 1, and any others)
+      return new DiscoveryConfiguration.BluetoothDiscoveryConfiguration(
+        0,
+        simulated
+      );
     }
   }
 
@@ -259,14 +253,20 @@ public class TerminalUtils {
       return 0;
     } else if (type == DeviceType.STRIPE_M2.ordinal()) {
       return 3;
-    } else if (type == DeviceType.VERIFONE_P400.ordinal()) {
-      return 1;
     } else if (type == DeviceType.WISEPAD_3.ordinal()) {
       return 2;
     } else if (type == DeviceType.WISEPOS_E.ordinal()) {
       return 4;
     } else if (type == DeviceType.STRIPE_S700.ordinal()) {
       return 9;
+    } else if (type == DeviceType.STRIPE_S700_DEVKIT.ordinal()) {
+      return 10;
+    } else if (type == DeviceType.TAP_TO_PAY_DEVICE.ordinal()) {
+      return 11;
+    } else if (type == DeviceType.STRIPE_S710.ordinal()) {
+      return 12;
+    } else if (type == DeviceType.STRIPE_S710_DEVKIT.ordinal()) {
+      return 13;
     } else {
       return 6;
     }
